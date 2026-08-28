@@ -1,5 +1,7 @@
 FROM oven/bun:1.4-alpine AS builder
 WORKDIR /app
+ARG VITE_API_BASE_URL=https://api.dragon-azul.dev/api/v1
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 COPY . .
