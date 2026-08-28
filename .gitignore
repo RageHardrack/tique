@@ -1,0 +1,28 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+*.local
+
+# Dependencies
+node_modules/
+
+# Build & Output
+dist/
+dist-ssr/
+
+# Logs
+logs/
+*.log
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+
+# Test results
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/

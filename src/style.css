@@ -1,0 +1,41 @@
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+@theme {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-active: #1e40af;
+  --color-brand-primary: #2b4162;
+  --color-brand-electric: #2563eb;
+  --color-brand-secondary: #4d7ea8;
+  --color-brand-gold: #d4af37;
+  --color-brand-dark: #0f1523;
+  --color-brand-surface: #162032;
+  --color-brand-card: #1c2940;
+  --color-brand-border: #283a59;
+  --color-brand-bone: #e0ddcf;
+}
+
+html {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+html.dark body {
+  background-color: #0f1523;
+  color: #f1f5f9;
+}
+
+html.light body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+[data-slot="overlay"] {
+  z-index: 50 !important;
+}
+
+[data-slot="content"] {
+  z-index: 50 !important;
+}
