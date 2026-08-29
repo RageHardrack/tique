@@ -12,11 +12,7 @@ const emit = defineEmits<{
 }>();
 
 function handleDelete() {
-  if (
-    confirm(`¿Estás seguro de eliminar la categoría "${props.category.name}"?`)
-  ) {
-    emit('delete', props.category.id);
-  }
+  emit('delete', props.category.id);
 }
 </script>
 

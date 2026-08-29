@@ -128,9 +128,7 @@ const progressList = computed<BudgetProgress[]>(() => {
 });
 
 function handleDelete(id: string) {
-  if (confirm('¿Estás seguro de eliminar este presupuesto?')) {
-    emit('delete', id);
-  }
+  emit('delete', id);
 }
 </script>
 

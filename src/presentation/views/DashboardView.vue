@@ -198,9 +198,11 @@ async function handleUpdateTx(
 }
 
 async function handleDeleteTx(id: string) {
-  await transactionStore.deleteTransaction(id);
-  if (authStore.user?.id) {
-    await accountStore.fetchAccounts(authStore.user.id);
+  if (confirm('¿Estás seguro de eliminar este movimiento?')) {
+    await transactionStore.deleteTransaction(id);
+    if (authStore.user?.id) {
+      await accountStore.fetchAccounts(authStore.user.id);
+    }
   }
 }
 

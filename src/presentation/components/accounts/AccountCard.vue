@@ -73,9 +73,7 @@ const formattedBalance = computed(() => {
 });
 
 function handleDelete() {
-  if (confirm(`¿Estás seguro de eliminar la cuenta "${props.account.name}"?`)) {
-    emit('delete', props.account.id);
-  }
+  emit('delete', props.account.id);
 }
 </script>
 

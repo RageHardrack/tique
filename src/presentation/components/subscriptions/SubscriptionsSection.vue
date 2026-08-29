@@ -174,9 +174,7 @@ function handlePay(item: SubscriptionDisplayItem) {
 }
 
 function handleDelete(id: string) {
-  if (confirm('¿Estás seguro de eliminar esta suscripción recurrente?')) {
-    emit('delete', id);
-  }
+  emit('delete', id);
 }
 </script>
 

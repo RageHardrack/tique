@@ -72,7 +72,9 @@ async function handlePay(id: string) {
 }
 
 async function handleDelete(id: string) {
-  await subscriptionStore.deleteSubscription(id);
+  if (confirm('¿Estás seguro de eliminar esta suscripción recurrente?')) {
+    await subscriptionStore.deleteSubscription(id);
+  }
 }
 </script>
 

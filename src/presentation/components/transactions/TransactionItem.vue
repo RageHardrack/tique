@@ -99,9 +99,7 @@ const formattedDate = computed(() => {
 });
 
 function handleDelete() {
-  if (confirm('¿Estás seguro de eliminar este movimiento?')) {
-    emit('delete', props.transaction.id);
-  }
+  emit('delete', props.transaction.id);
 }
 </script>
 

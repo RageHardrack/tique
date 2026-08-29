@@ -6,10 +6,14 @@ export class ApiClient {
     ? BASE_URL.slice(0, -1)
     : BASE_URL;
 
-  private static getHeaders(token?: string | null): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+  private static getHeaders(
+    token?: string | null,
+    includeContentType = true,
+  ): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (includeContentType) {
+      headers['Content-Type'] = 'application/json';
+    }
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -44,7 +48,7 @@ export class ApiClient {
 
     const response = await fetch(`${this.baseUrl}${formattedEndpoint}`, {
       method: 'GET',
-      headers: this.getHeaders(token),
+      headers: this.getHeaders(token, false),
     });
 
     return this.handleResponse<T>(response);
@@ -61,7 +65,7 @@ export class ApiClient {
 
     const response = await fetch(`${this.baseUrl}${formattedEndpoint}`, {
       method: 'POST',
-      headers: this.getHeaders(token),
+      headers: this.getHeaders(token, true),
       body: JSON.stringify(data),
     });
 
@@ -79,7 +83,7 @@ export class ApiClient {
 
     const response = await fetch(`${this.baseUrl}${formattedEndpoint}`, {
       method: 'PUT',
-      headers: this.getHeaders(token),
+      headers: this.getHeaders(token, true),
       body: JSON.stringify(data),
     });
 
@@ -97,7 +101,7 @@ export class ApiClient {
 
     const response = await fetch(`${this.baseUrl}${formattedEndpoint}`, {
       method: 'PATCH',
-      headers: this.getHeaders(token),
+      headers: this.getHeaders(token, true),
       body: JSON.stringify(data),
     });
 
@@ -111,7 +115,7 @@ export class ApiClient {
 
     const response = await fetch(`${this.baseUrl}${formattedEndpoint}`, {
       method: 'DELETE',
-      headers: this.getHeaders(token),
+      headers: this.getHeaders(token, false),
     });
 
     return this.handleResponse<T>(response);

@@ -70,7 +70,9 @@ async function handleUpdate(
 }
 
 async function handleDelete(id: string) {
-  await budgetStore.deleteBudget(id);
+  if (confirm('¿Estás seguro de eliminar este presupuesto?')) {
+    await budgetStore.deleteBudget(id);
+  }
 }
 </script>
 
