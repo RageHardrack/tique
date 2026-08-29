@@ -19,6 +19,8 @@ export interface CreateTransactionInput {
   destinationAccountId?: string;
   categoryId?: string;
   amount: number;
+  destinationAmount?: number;
+  exchangeRate?: number;
   type: TransactionType;
   date?: string;
   note?: string;

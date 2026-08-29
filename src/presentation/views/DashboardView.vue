@@ -164,6 +164,8 @@ async function handleCreateTx(payload: {
   destinationAccountId?: string;
   categoryId?: string;
   amount: number;
+  destinationAmount?: number;
+  exchangeRate?: number;
   date: string;
   note?: string;
 }) {
@@ -183,6 +185,8 @@ async function handleUpdateTx(
     destinationAccountId?: string;
     categoryId?: string;
     amount: number;
+    destinationAmount?: number;
+    exchangeRate?: number;
     date: string;
     note?: string;
   },
@@ -194,11 +198,9 @@ async function handleUpdateTx(
 }
 
 async function handleDeleteTx(id: string) {
-  if (confirm('¿Estás seguro de eliminar este movimiento?')) {
-    await transactionStore.deleteTransaction(id);
-    if (authStore.user?.id) {
-      await accountStore.fetchAccounts(authStore.user.id);
-    }
+  await transactionStore.deleteTransaction(id);
+  if (authStore.user?.id) {
+    await accountStore.fetchAccounts(authStore.user.id);
   }
 }
 
@@ -525,6 +527,11 @@ async function handlePaySubscription(subscriptionId: string) {
             :destination-account-name="
               tx.destinationAccountId
                 ? accountsMap[tx.destinationAccountId]
+                : undefined
+            "
+            :destination-account-currency="
+              tx.destinationAccountId
+                ? accountsCurrencyMap[tx.destinationAccountId]
                 : undefined
             "
             :category-name="

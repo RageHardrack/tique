@@ -441,4 +441,107 @@ describe('Creation Modals Logic and Emits', () => {
       });
     });
   });
+
+  describe('CreateTransactionModal', () => {
+    const mockAccounts = [
+      {
+        id: 'acc-usd',
+        userId: 'u1',
+        name: 'Cuenta USD',
+        type: 'CHECKING' as const,
+        balance: 1000,
+        currency: 'USD',
+        createdAt: '',
+        updatedAt: '',
+      },
+      {
+        id: 'acc-pen',
+        userId: 'u1',
+        name: 'Cuenta Soles',
+        type: 'SAVINGS' as const,
+        balance: 3000,
+        currency: 'PEN',
+        createdAt: '',
+        updatedAt: '',
+      },
+    ];
+
+    it('should calculate destination amount and exchange rate for cross-currency transfer', async () => {
+      const wrapper = mount(CreateTransactionModal, {
+        props: {
+          open: true,
+          accounts: mockAccounts,
+          categories: [],
+        },
+      });
+
+      const vm = wrapper.vm as any;
+      vm.form.type = 'TRANSFER';
+      vm.form.accountId = 'acc-usd';
+      vm.form.destinationAccountId = 'acc-pen';
+      vm.form.amount = 50;
+      vm.handleAmountInput();
+
+      expect(vm.isCrossCurrency).toBe(true);
+      expect(vm.form.destinationAmount).toBe(187.5);
+      expect(vm.form.exchangeRate).toBe(3.75);
+
+      vm.handleSubmit();
+
+      const createEvents = wrapper.emitted('created');
+      expect(createEvents).toBeTruthy();
+      expect(createEvents?.[0][0]).toMatchObject({
+        type: 'TRANSFER',
+        accountId: 'acc-usd',
+        destinationAccountId: 'acc-pen',
+        amount: 50,
+        destinationAmount: 187.5,
+        exchangeRate: 3.75,
+      });
+    });
+
+    it('should emit updated with destinationAmount when editing an existing transfer', async () => {
+      const existingTx = {
+        id: 'tx-999',
+        userId: 'u1',
+        accountId: 'acc-usd',
+        destinationAccountId: 'acc-pen',
+        amount: 50,
+        destinationAmount: 190,
+        exchangeRate: 3.8,
+        type: 'TRANSFER' as const,
+        date: '2026-08-25T10:00:00.000Z',
+        createdAt: '',
+        updatedAt: '',
+      };
+
+      const wrapper = mount(CreateTransactionModal, {
+        props: {
+          open: true,
+          transaction: existingTx,
+          accounts: mockAccounts,
+          categories: [],
+        },
+      });
+
+      const vm = wrapper.vm as any;
+      expect(vm.form.amount).toBe(50);
+      expect(vm.form.destinationAmount).toBe(190);
+
+      vm.form.destinationAmount = 195;
+      vm.handleDestinationAmountInput();
+      vm.handleSubmit();
+
+      const updateEvents = wrapper.emitted('updated');
+      expect(updateEvents).toBeTruthy();
+      expect(updateEvents?.[0][0]).toBe('tx-999');
+      expect(updateEvents?.[0][1]).toMatchObject({
+        type: 'TRANSFER',
+        accountId: 'acc-usd',
+        destinationAccountId: 'acc-pen',
+        amount: 50,
+        destinationAmount: 195,
+      });
+    });
+  });
 });

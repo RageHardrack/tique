@@ -32,6 +32,8 @@ async function handleCreate(payload: {
   destinationAccountId?: string;
   categoryId?: string;
   amount: number;
+  destinationAmount?: number;
+  exchangeRate?: number;
   date: string;
   note?: string;
 }) {
@@ -52,6 +54,8 @@ async function handleUpdate(
     destinationAccountId?: string;
     categoryId?: string;
     amount: number;
+    destinationAmount?: number;
+    exchangeRate?: number;
     date: string;
     note?: string;
   },
@@ -63,11 +67,9 @@ async function handleUpdate(
 }
 
 async function handleDelete(id: string) {
-  if (confirm('¿Estás seguro de eliminar este movimiento?')) {
-    await transactionStore.deleteTransaction(id);
-    if (authStore.user?.id) {
-      await accountStore.fetchAccounts(authStore.user.id);
-    }
+  await transactionStore.deleteTransaction(id);
+  if (authStore.user?.id) {
+    await accountStore.fetchAccounts(authStore.user.id);
   }
 }
 

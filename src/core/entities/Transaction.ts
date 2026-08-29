@@ -9,6 +9,8 @@ export interface Transaction {
   destinationAccountId?: string | null;
   categoryId?: string | null;
   amount: number;
+  destinationAmount?: number | null;
+  exchangeRate?: number | null;
   type: TransactionType;
   date: string;
   note?: string | null;

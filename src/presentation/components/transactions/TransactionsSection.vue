@@ -41,6 +41,8 @@ const emit = defineEmits<{
       destinationAccountId?: string;
       categoryId?: string;
       amount: number;
+      destinationAmount?: number;
+      exchangeRate?: number;
       date: string;
       note?: string;
     },
@@ -54,6 +56,8 @@ const emit = defineEmits<{
       destinationAccountId?: string;
       categoryId?: string;
       amount: number;
+      destinationAmount?: number;
+      exchangeRate?: number;
       date: string;
       note?: string;
     },
@@ -183,6 +187,8 @@ function handleCreate(payload: {
   destinationAccountId?: string;
   categoryId?: string;
   amount: number;
+  destinationAmount?: number;
+  exchangeRate?: number;
   date: string;
   note?: string;
 }) {
@@ -459,6 +465,11 @@ function handleDelete(id: string) {
         :destination-account-name="
           tx.destinationAccountId
             ? accountsMap[tx.destinationAccountId]
+            : undefined
+        "
+        :destination-account-currency="
+          tx.destinationAccountId
+            ? accountsCurrencyMap[tx.destinationAccountId]
             : undefined
         "
         :category-name="

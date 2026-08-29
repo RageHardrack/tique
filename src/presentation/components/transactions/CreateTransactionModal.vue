@@ -6,6 +6,7 @@ import type { Category } from '../../../core/entities/Category';
 import type { Transaction, TransactionType } from '../../../core/entities/Transaction';
 import type { TaxCategory, TaxDeductionType, TaxDocumentType } from '../../../core/entities/Tax';
 import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
+import { useExchangeRateStore } from '../../store/exchange-rates';
 
 interface Props {
   transaction?: Transaction | null;
@@ -14,6 +15,8 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const rateStore = useExchangeRateStore();
 
 const open = defineModel<boolean>('open', { default: false });
 
@@ -26,6 +29,8 @@ const emit = defineEmits<{
       destinationAccountId?: string;
       categoryId?: string;
       amount: number;
+      destinationAmount?: number;
+      exchangeRate?: number;
       date: string;
       note?: string;
       taxCategory?: TaxCategory;
@@ -44,6 +49,8 @@ const emit = defineEmits<{
       destinationAccountId?: string;
       categoryId?: string;
       amount: number;
+      destinationAmount?: number;
+      exchangeRate?: number;
       date: string;
       note?: string;
       taxCategory?: TaxCategory;
@@ -63,6 +70,8 @@ const form = reactive<{
   destinationAccountId: string;
   categoryId: string;
   amount: number | null;
+  destinationAmount: number | null;
+  exchangeRate: number | null;
   date: string;
   note: string;
   taxCategory: TaxCategory;
@@ -76,6 +85,8 @@ const form = reactive<{
   destinationAccountId: '',
   categoryId: '',
   amount: null,
+  destinationAmount: null,
+  exchangeRate: null,
   date: today,
   note: '',
   taxCategory: 'NONE',
@@ -88,10 +99,72 @@ const form = reactive<{
 const isSubmitting = ref(false);
 const errorMessage = ref<string | null>(null);
 
+const selectedAccount = computed(() => {
+  return props.accounts.find((acc) => acc.id === form.accountId);
+});
+
+const selectedDestinationAccount = computed(() => {
+  return props.accounts.find((acc) => acc.id === form.destinationAccountId);
+});
+
+const isCrossCurrency = computed(() => {
+  return (
+    form.type === 'TRANSFER' &&
+    !!selectedAccount.value &&
+    !!selectedDestinationAccount.value &&
+    selectedAccount.value.currency !== selectedDestinationAccount.value.currency
+  );
+});
+
+function calculateDestinationAmount() {
+  if (
+    isCrossCurrency.value &&
+    selectedAccount.value &&
+    selectedDestinationAccount.value &&
+    form.amount &&
+    Number(form.amount) > 0
+  ) {
+    const converted = rateStore.convert(
+      Number(form.amount),
+      selectedAccount.value.currency,
+      selectedDestinationAccount.value.currency,
+    );
+    form.destinationAmount = Math.round(converted * 100) / 100;
+    form.exchangeRate =
+      Math.round(
+        (Number(form.destinationAmount) / Number(form.amount)) * 10000,
+      ) / 10000;
+  } else if (!isCrossCurrency.value) {
+    form.destinationAmount = form.amount;
+    form.exchangeRate = 1;
+  }
+}
+
+function handleAmountInput() {
+  if (form.type === 'TRANSFER' && isCrossCurrency.value) {
+    calculateDestinationAmount();
+  }
+}
+
+function handleDestinationAmountInput() {
+  if (
+    form.amount &&
+    Number(form.amount) > 0 &&
+    form.destinationAmount &&
+    Number(form.destinationAmount) > 0
+  ) {
+    form.exchangeRate =
+      Math.round(
+        (Number(form.destinationAmount) / Number(form.amount)) * 10000,
+      ) / 10000;
+  }
+}
+
 // Auto-calculate 8% withholding when selecting 4ta category
 function calculateWithholding() {
   if (form.amount && Number(form.amount) > 1500) {
-    form.taxWithholdingAmount = Math.round(Number(form.amount) * 0.08 * 100) / 100;
+    form.taxWithholdingAmount =
+      Math.round(Number(form.amount) * 0.08 * 100) / 100;
   } else {
     form.taxWithholdingAmount = 0;
   }
@@ -124,15 +197,23 @@ watch(
       if (props.transaction) {
         form.type = props.transaction.type;
         form.accountId = props.transaction.accountId;
-        form.destinationAccountId = props.transaction.destinationAccountId || '';
+        form.destinationAccountId =
+          props.transaction.destinationAccountId || '';
         form.categoryId = props.transaction.categoryId || '';
         form.amount = props.transaction.amount;
+        form.destinationAmount =
+          props.transaction.destinationAmount ??
+          (props.transaction.type === 'TRANSFER'
+            ? props.transaction.amount
+            : null);
+        form.exchangeRate = props.transaction.exchangeRate ?? null;
         form.date = new Date(props.transaction.date).toISOString().slice(0, 10);
         form.note = props.transaction.note || '';
         form.taxCategory = props.transaction.taxCategory || 'NONE';
         form.taxDocumentType = props.transaction.taxDocumentType || 'NONE';
         form.taxDocumentNumber = props.transaction.taxDocumentNumber || '';
-        form.taxWithholdingAmount = props.transaction.taxWithholdingAmount ?? null;
+        form.taxWithholdingAmount =
+          props.transaction.taxWithholdingAmount ?? null;
         form.taxDeductionType = props.transaction.taxDeductionType || 'NONE';
       } else {
         resetForm();
@@ -143,9 +224,14 @@ watch(
   { immediate: true },
 );
 
-const selectedAccount = computed(() => {
-  return props.accounts.find((acc) => acc.id === form.accountId);
-});
+watch(
+  () => [form.destinationAccountId, form.accountId, form.type],
+  ([, , currentType]) => {
+    if (currentType === 'TRANSFER' && !props.transaction) {
+      calculateDestinationAmount();
+    }
+  },
+);
 
 // Filter categories by transaction type
 const filteredCategories = computed(() => {
@@ -223,6 +309,8 @@ function resetForm() {
   form.destinationAccountId = '';
   form.categoryId = '';
   form.amount = null;
+  form.destinationAmount = null;
+  form.exchangeRate = null;
   form.date = new Date().toISOString().slice(0, 10);
   form.note = '';
   form.taxCategory = 'NONE';
@@ -262,9 +350,29 @@ function handleSubmit() {
         'La cuenta de destino debe ser diferente a la cuenta de origen.';
       return;
     }
+    if (isCrossCurrency.value && (!form.destinationAmount || form.destinationAmount <= 0)) {
+      errorMessage.value = 'El monto a recibir en la cuenta destino debe ser mayor a 0.';
+      return;
+    }
   }
 
   isSubmitting.value = true;
+
+  const destinationAmountValue =
+    form.type === 'TRANSFER'
+      ? form.destinationAmount !== null && form.destinationAmount !== undefined
+        ? Number(form.destinationAmount)
+        : Number(form.amount)
+      : undefined;
+
+  const exchangeRateValue =
+    form.type === 'TRANSFER' && isCrossCurrency.value
+      ? form.exchangeRate !== null && form.exchangeRate !== undefined
+        ? Number(form.exchangeRate)
+        : form.amount && destinationAmountValue
+          ? Number((destinationAmountValue / Number(form.amount)).toFixed(4))
+          : undefined
+      : undefined;
 
   try {
     if (props.transaction?.id) {
@@ -275,6 +383,8 @@ function handleSubmit() {
           form.type === 'TRANSFER' ? form.destinationAccountId : undefined,
         categoryId: form.categoryId || undefined,
         amount: Number(form.amount),
+        destinationAmount: destinationAmountValue,
+        exchangeRate: exchangeRateValue,
         date: new Date(form.date).toISOString(),
         note: form.note.trim() || undefined,
         taxCategory: form.taxCategory,
@@ -291,6 +401,8 @@ function handleSubmit() {
           form.type === 'TRANSFER' ? form.destinationAccountId : undefined,
         categoryId: form.categoryId || undefined,
         amount: Number(form.amount),
+        destinationAmount: destinationAmountValue,
+        exchangeRate: exchangeRateValue,
         date: new Date(form.date).toISOString(),
         note: form.note.trim() || undefined,
         taxCategory: form.taxCategory,
@@ -371,32 +483,6 @@ function handleSubmit() {
           </button>
         </div>
 
-        <!-- Amount -->
-        <div class="space-y-1.5">
-          <div class="flex items-center justify-between">
-            <label class="text-sm font-medium text-slate-200">
-              Monto <span class="text-red-400">*</span>
-            </label>
-            <span
-              v-if="selectedAccount"
-              class="text-xs font-semibold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/30"
-            >
-              {{ selectedAccount.currency }} ({{
-                CurrencyFormatter.getSymbol(selectedAccount.currency)
-              }})
-            </span>
-          </div>
-          <UInput
-            v-model.number="form.amount"
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            class="w-full text-lg font-bold"
-            required
-            autofocus
-          />
-        </div>
-
         <!-- Account Selection -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="space-y-1.5">
@@ -435,6 +521,119 @@ function handleSubmit() {
               class="w-full"
             />
           </div>
+        </div>
+
+        <!-- Amount Fields: Standard vs Cross-Currency Transfer -->
+        <div v-if="isCrossCurrency" class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Source Amount (Enviar) -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-semibold text-slate-200">
+                  Monto a Enviar <span class="text-red-400">*</span>
+                </label>
+                <span
+                  v-if="selectedAccount"
+                  class="text-[11px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/30"
+                >
+                  {{ selectedAccount.currency }} ({{
+                    CurrencyFormatter.getSymbol(selectedAccount.currency)
+                  }})
+                </span>
+              </div>
+              <UInput
+                v-model.number="form.amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                class="w-full text-base font-bold"
+                required
+                @input="handleAmountInput"
+              />
+            </div>
+
+            <!-- Destination Amount (Recibir) -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-semibold text-slate-200">
+                  Monto a Recibir <span class="text-red-400">*</span>
+                </label>
+                <span
+                  v-if="selectedDestinationAccount"
+                  class="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30"
+                >
+                  {{ selectedDestinationAccount.currency }} ({{
+                    CurrencyFormatter.getSymbol(selectedDestinationAccount.currency)
+                  }})
+                </span>
+              </div>
+              <UInput
+                v-model.number="form.destinationAmount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                class="w-full text-base font-bold text-emerald-400"
+                required
+                @input="handleDestinationAmountInput"
+              />
+            </div>
+          </div>
+
+          <!-- Exchange Rate Info Banner -->
+          <div
+            v-if="selectedAccount && selectedDestinationAccount"
+            class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-400"
+          >
+            <div class="flex items-center gap-1.5">
+              <UIcon name="i-heroicons-arrows-right-left" class="w-4 h-4 text-sky-400" />
+              <span>
+                Tipo de cambio:
+                <strong class="text-slate-200">
+                  1 {{ selectedAccount.currency }} =
+                  {{
+                    form.exchangeRate
+                      ? form.exchangeRate.toFixed(4)
+                      : (rateStore.convert(1, selectedAccount.currency, selectedDestinationAccount.currency)).toFixed(4)
+                  }}
+                  {{ selectedDestinationAccount.currency }}
+                </strong>
+              </span>
+            </div>
+            <button
+              type="button"
+              class="text-[11px] font-semibold text-sky-400 hover:text-sky-300 hover:underline cursor-pointer"
+              @click="calculateDestinationAmount"
+            >
+              Recalcular tasa
+            </button>
+          </div>
+        </div>
+
+        <!-- Standard Amount Field (Single Currency or Income/Expense) -->
+        <div v-else class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium text-slate-200">
+              Monto <span class="text-red-400">*</span>
+            </label>
+            <span
+              v-if="selectedAccount"
+              class="text-xs font-semibold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/30"
+            >
+              {{ selectedAccount.currency }} ({{
+                CurrencyFormatter.getSymbol(selectedAccount.currency)
+              }})
+            </span>
+          </div>
+          <UInput
+            v-model.number="form.amount"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            class="w-full text-lg font-bold"
+            required
+            autofocus
+            @input="handleAmountInput"
+          />
         </div>
 
         <!-- Date and Note -->

@@ -13,9 +13,13 @@ interface Props {
   accountCurrency?: string;
   categoryName?: string;
   destinationAccountName?: string;
+  destinationAccountCurrency?: string;
+  canDelete?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  canDelete: true,
+});
 
 const emit = defineEmits<{
   (e: 'edit', transaction: Transaction): void;
@@ -59,6 +63,18 @@ const currentConfig = computed(() => {
   return typeConfig[props.transaction.type] || typeConfig.EXPENSE;
 });
 
+const isCrossCurrencyTransfer = computed(() => {
+  return (
+    props.transaction.type === 'TRANSFER' &&
+    props.transaction.destinationAmount !== undefined &&
+    props.transaction.destinationAmount !== null &&
+    (props.transaction.destinationAmount !== props.transaction.amount ||
+      (props.accountCurrency &&
+        props.destinationAccountCurrency &&
+        props.accountCurrency !== props.destinationAccountCurrency))
+  );
+});
+
 const formattedAmount = computed(() => {
   const formatted = CurrencyFormatter.format(
     props.transaction.amount,
@@ -66,6 +82,14 @@ const formattedAmount = computed(() => {
   );
 
   return `${currentConfig.value.prefix} ${formatted}`;
+});
+
+const formattedDestinationAmount = computed(() => {
+  if (!props.transaction.destinationAmount) return '';
+  return CurrencyFormatter.format(
+    props.transaction.destinationAmount,
+    props.destinationAccountCurrency || 'USD',
+  );
 });
 
 const formattedDate = computed(() => {
@@ -135,12 +159,20 @@ function handleDelete() {
     <div
       class="flex items-center justify-between sm:justify-end gap-4 border-t border-slate-100 dark:border-[#283a59]/60 pt-2 sm:border-0 sm:pt-0"
     >
-      <span
-        class="text-base font-black tracking-tight"
-        :class="currentConfig.amountClass"
-      >
-        {{ formattedAmount }}
-      </span>
+      <div class="flex flex-col items-end text-right">
+        <span
+          class="text-base font-black tracking-tight"
+          :class="currentConfig.amountClass"
+        >
+          {{ formattedAmount }}
+        </span>
+        <span
+          v-if="isCrossCurrencyTransfer"
+          class="text-xs font-semibold text-emerald-500 dark:text-emerald-400"
+        >
+          ➔ {{ formattedDestinationAmount }}
+        </span>
+      </div>
 
       <div class="flex items-center gap-1">
         <UButton
@@ -153,6 +185,7 @@ function handleDelete() {
           @click="emit('edit', transaction)"
         />
         <UButton
+          v-if="canDelete"
           color="error"
           variant="ghost"
           size="xs"
