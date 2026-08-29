@@ -9,6 +9,7 @@ import { useTransactionStore } from '../store/transactions';
 import { useSubscriptionStore } from '../store/subscriptions';
 import { useExchangeRateStore } from '../store/exchange-rates';
 import type { RecurrenceFrequency } from '../../core/entities/Subscription';
+import { useConfirm } from '../composables/useConfirm';
 import SubscriptionsSection from '../components/subscriptions/SubscriptionsSection.vue';
 
 const authStore = useAuthStore();
@@ -17,6 +18,7 @@ const subscriptionStore = useSubscriptionStore();
 const categoryStore = useCategoryStore();
 const transactionStore = useTransactionStore();
 const rateStore = useExchangeRateStore();
+const { confirm: confirmDialog } = useConfirm();
 
 onMounted(async () => {
   if (authStore.user?.id) {
@@ -62,17 +64,35 @@ async function handleUpdate(
 }
 
 async function handlePay(id: string) {
-  await subscriptionStore.paySubscription(id);
-  if (authStore.user?.id) {
-    await Promise.all([
-      accountStore.fetchAccounts(authStore.user.id),
-      transactionStore.fetchTransactions(authStore.user.id),
-    ]);
+  const sub = subscriptionStore.subscriptions.find((s) => s.id === id);
+  const name = sub?.name || 'la suscripción';
+  const confirmed = await confirmDialog({
+    title: 'Registrar pago recurrente',
+    message: `¿Deseas registrar el pago de "${name}"? Se creará el movimiento correspondiente y se actualizará el saldo de la cuenta.`,
+    confirmText: 'Registrar Pago',
+    variant: 'info',
+  });
+
+  if (confirmed) {
+    await subscriptionStore.paySubscription(id);
+    if (authStore.user?.id) {
+      await Promise.all([
+        accountStore.fetchAccounts(authStore.user.id),
+        transactionStore.fetchTransactions(authStore.user.id),
+      ]);
+    }
   }
 }
 
 async function handleDelete(id: string) {
-  if (confirm('¿Estás seguro de eliminar esta suscripción recurrente?')) {
+  const confirmed = await confirmDialog({
+    title: 'Eliminar suscripción',
+    message: '¿Estás seguro de que deseas eliminar esta suscripción recurrente?',
+    confirmText: 'Eliminar',
+    variant: 'danger',
+  });
+
+  if (confirmed) {
     await subscriptionStore.deleteSubscription(id);
   }
 }

@@ -8,6 +8,7 @@ import { useTransactionStore } from '../store/transactions';
 import { useExchangeRateStore } from '../store/exchange-rates';
 import type { Account, AccountType } from '../../core/entities/Account';
 import { CurrencyFormatter } from '../../core/services/CurrencyFormatter';
+import { useConfirm } from '../composables/useConfirm';
 import CreateAccountModal from '../components/accounts/CreateAccountModal.vue';
 import ReconcileAccountModal from '../components/accounts/ReconcileAccountModal.vue';
 
@@ -15,6 +16,7 @@ const authStore = useAuthStore();
 const accountStore = useAccountStore();
 const transactionStore = useTransactionStore();
 const rateStore = useExchangeRateStore();
+const { confirm: confirmDialog } = useConfirm();
 
 const isCreateModalOpen = ref(false);
 const editingAccount = ref<Account | null>(null);
@@ -125,11 +127,14 @@ async function handleUpdate(
 }
 
 async function handleDelete(id: string) {
-  if (
-    confirm(
-      '¿Estás seguro de eliminar esta cuenta? Se desvincularán los movimientos asociados.',
-    )
-  ) {
+  const confirmed = await confirmDialog({
+    title: 'Eliminar cuenta',
+    message: '¿Estás seguro de que deseas eliminar esta cuenta? Se desvincularán los movimientos asociados.',
+    confirmText: 'Eliminar',
+    variant: 'danger',
+  });
+
+  if (confirmed) {
     await accountStore.deleteAccount(id);
   }
 }

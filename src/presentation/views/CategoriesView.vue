@@ -8,12 +8,14 @@ import { useTransactionStore } from '../store/transactions';
 import { useTaxStore } from '../store/tax.store';
 import type { Category, CategoryType } from '../../core/entities/Category';
 import type { TaxCategory, TaxDeductionType } from '../../core/entities/Tax';
+import { useConfirm } from '../composables/useConfirm';
 import CreateCategoryModal from '../components/categories/CreateCategoryModal.vue';
 
 const authStore = useAuthStore();
 const categoryStore = useCategoryStore();
 const transactionStore = useTransactionStore();
 const taxStore = useTaxStore();
+const { confirm: confirmDialog } = useConfirm();
 
 const activeTab = ref<'EXPENSE' | 'INCOME'>('EXPENSE');
 const isCreateModalOpen = ref(false);
@@ -101,11 +103,14 @@ async function handleUpdate(
 }
 
 async function handleDelete(id: string) {
-  if (
-    confirm(
-      '¿Estás seguro de eliminar esta categoría? Los movimientos existentes conservarán sus datos.',
-    )
-  ) {
+  const confirmed = await confirmDialog({
+    title: 'Eliminar categoría',
+    message: '¿Estás seguro de que deseas eliminar esta categoría? Los movimientos existentes conservarán sus datos.',
+    confirmText: 'Eliminar',
+    variant: 'danger',
+  });
+
+  if (confirmed) {
     await categoryStore.deleteCategory(id);
   }
 }

@@ -9,11 +9,13 @@ import { useAccountStore } from '../store/accounts';
 import { useAuthStore } from '../store/auth';
 import { useExchangeRateStore } from '../store/exchange-rates';
 import type { CreateGoalInput, SavingsGoal, UpdateGoalInput } from '../../core/entities/Goal';
+import { useConfirm } from '../composables/useConfirm';
 
 const authStore = useAuthStore();
 const goalStore = useGoalStore();
 const accountStore = useAccountStore();
 const rateStore = useExchangeRateStore();
+const { confirm: confirmDialog } = useConfirm();
 
 const isCreateModalOpen = ref(false);
 const editingGoal = ref<SavingsGoal | null>(null);
@@ -51,7 +53,14 @@ function handleEdit(goal: SavingsGoal) {
 }
 
 async function handleDelete(goalId: string) {
-  if (confirm('¿Estás seguro de que deseas eliminar esta meta de ahorro?')) {
+  const confirmed = await confirmDialog({
+    title: 'Eliminar meta de ahorro',
+    message: '¿Estás seguro de que deseas eliminar esta meta de ahorro?',
+    confirmText: 'Eliminar',
+    variant: 'danger',
+  });
+
+  if (confirmed) {
     await goalStore.deleteGoal(goalId);
   }
 }

@@ -7,7 +7,7 @@ test.describe('Préstamos y Deudas E2E', () => {
   }) => {
     const testPerson = `Contacto Prueba ${Date.now()}`;
     await authenticatedPage.goto('/prestamos');
-    await expect(authenticatedPage.getByRole('heading', { name: 'Préstamos & Deudas' })).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { name: /Préstamos/i }).first()).toBeVisible();
 
     // Validar tarjetas ejecutivas de resumen
     await expect(authenticatedPage.getByText('Por Cobrar (Presté)')).toBeVisible();

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ConfirmModal from './presentation/components/common/ConfirmModal.vue';
 import { usePwaStore } from './presentation/store/pwa';
 
 const pwaStore = usePwaStore();
@@ -7,6 +8,7 @@ const pwaStore = usePwaStore();
 <template>
   <div class="min-h-screen bg-slate-900 text-slate-100">
     <router-view />
+    <ConfirmModal />
 
     <!-- PWA Update Notification Prompt -->
     <div

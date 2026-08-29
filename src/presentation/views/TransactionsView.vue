@@ -8,6 +8,7 @@ import { useCategoryStore } from '../store/categories';
 import { useTransactionStore } from '../store/transactions';
 import { useExchangeRateStore } from '../store/exchange-rates';
 import type { TransactionType } from '../../core/entities/Transaction';
+import { useConfirm } from '../composables/useConfirm';
 import TransactionsSection from '../components/transactions/TransactionsSection.vue';
 
 const authStore = useAuthStore();
@@ -15,6 +16,7 @@ const accountStore = useAccountStore();
 const categoryStore = useCategoryStore();
 const transactionStore = useTransactionStore();
 const rateStore = useExchangeRateStore();
+const { confirm: confirmDialog } = useConfirm();
 
 onMounted(async () => {
   if (authStore.user?.id) {
@@ -42,7 +44,6 @@ async function handleCreate(payload: {
     ...payload,
     userId: authStore.user.id,
   });
-  // Refresh accounts to reflect balance change
   await accountStore.fetchAccounts(authStore.user.id);
 }
 
@@ -67,7 +68,14 @@ async function handleUpdate(
 }
 
 async function handleDelete(id: string) {
-  if (confirm('¿Estás seguro de eliminar este movimiento?')) {
+  const confirmed = await confirmDialog({
+    title: 'Eliminar movimiento',
+    message: '¿Estás seguro de que deseas eliminar este movimiento? El saldo de la cuenta será reajustado.',
+    confirmText: 'Eliminar',
+    variant: 'danger',
+  });
+
+  if (confirmed) {
     await transactionStore.deleteTransaction(id);
     if (authStore.user?.id) {
       await accountStore.fetchAccounts(authStore.user.id);

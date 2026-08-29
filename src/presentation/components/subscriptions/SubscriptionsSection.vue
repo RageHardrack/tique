@@ -164,13 +164,7 @@ const displayItems = computed<SubscriptionDisplayItem[]>(() => {
 });
 
 function handlePay(item: SubscriptionDisplayItem) {
-  if (
-    confirm(
-      `¿Registrar el pago de "${item.subscription.name}" por ${item.formattedAmount} en ${item.accountName}? Se creará el movimiento y se actualizará el saldo.`,
-    )
-  ) {
-    emit('pay', item.subscription.id);
-  }
+  emit('pay', item.subscription.id);
 }
 
 function handleDelete(id: string) {

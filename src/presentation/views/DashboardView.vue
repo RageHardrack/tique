@@ -15,6 +15,7 @@ import type { TransactionType } from '../../core/entities/Transaction';
 import { AnalyticsService } from '../../core/services/AnalyticsService';
 import { CurrencyFormatter } from '../../core/services/CurrencyFormatter';
 import { ReminderService } from '../../core/services/ReminderService';
+import { useConfirm } from '../composables/useConfirm';
 import TransactionItem from '../components/transactions/TransactionItem.vue';
 import CategoryDonutChart from '../components/analytics/CategoryDonutChart.vue';
 import CashflowSummaryCard from '../components/analytics/CashflowSummaryCard.vue';
@@ -28,6 +29,7 @@ const subscriptionStore = useSubscriptionStore();
 const categoryStore = useCategoryStore();
 const transactionStore = useTransactionStore();
 const rateStore = useExchangeRateStore();
+const { confirm: confirmDialog } = useConfirm();
 
 onMounted(async () => {
   if (authStore.user?.id) {
@@ -198,7 +200,14 @@ async function handleUpdateTx(
 }
 
 async function handleDeleteTx(id: string) {
-  if (confirm('¿Estás seguro de eliminar este movimiento?')) {
+  const confirmed = await confirmDialog({
+    title: 'Eliminar movimiento',
+    message: '¿Estás seguro de que deseas eliminar este movimiento?',
+    confirmText: 'Eliminar',
+    variant: 'danger',
+  });
+
+  if (confirmed) {
     await transactionStore.deleteTransaction(id);
     if (authStore.user?.id) {
       await accountStore.fetchAccounts(authStore.user.id);

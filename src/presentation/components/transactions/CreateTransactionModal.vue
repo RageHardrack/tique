@@ -226,6 +226,16 @@ watch(
 );
 
 watch(
+  () => props.accounts,
+  (accounts) => {
+    if (!form.accountId && accounts && accounts.length > 0) {
+      form.accountId = accounts[0].id;
+    }
+  },
+  { immediate: true },
+);
+
+watch(
   () => [form.destinationAccountId, form.accountId, form.type],
   ([, , currentType]) => {
     if (currentType === 'TRANSFER' && !props.transaction) {

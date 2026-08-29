@@ -7,6 +7,7 @@ test.describe('E2E - Date Precision and Transaction Deletion', () => {
   }) => {
     await authenticatedPage.goto('/movimientos');
     await expect(authenticatedPage.getByRole('heading', { name: 'Movimientos', exact: true })).toBeVisible();
+    await authenticatedPage.waitForLoadState('networkidle');
 
     // Click "Nuevo Movimiento"
     const newTxBtn = authenticatedPage.getByRole('button', { name: /Nuevo Movimiento/i });
@@ -55,13 +56,15 @@ test.describe('E2E - Date Precision and Transaction Deletion', () => {
     // Verify updated date on list
     await expect(createdItem.getByText(/15 sep 2026/i)).toBeVisible();
 
-    // Delete the transaction
-    authenticatedPage.once('dialog', async (dialog) => {
-      await dialog.accept();
-    });
-
+    // Delete the transaction via custom UI confirm modal
     const deleteBtn = createdItem.getByRole('button', { name: /Eliminar movimiento/i });
     await deleteBtn.click();
+
+    const confirmModal = authenticatedPage.getByRole('dialog');
+    await expect(confirmModal).toBeVisible();
+    const confirmDeleteBtn = confirmModal.getByRole('button', { name: 'Eliminar', exact: true });
+    await confirmDeleteBtn.click();
+    await expect(confirmModal).toBeHidden();
 
     // Verify item is removed from DOM
     await expect(createdItem).toBeHidden();

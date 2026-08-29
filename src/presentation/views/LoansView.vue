@@ -11,12 +11,14 @@ import { useExchangeRateStore } from '../store/exchange-rates';
 import { useTransactionStore } from '../store/transactions';
 import { CurrencyFormatter } from '../../core/services/CurrencyFormatter';
 import type { Loan, LoanType } from '../../core/entities/Loan';
+import { useConfirm } from '../composables/useConfirm';
 
 const authStore = useAuthStore();
 const loanStore = useLoanStore();
 const accountStore = useAccountStore();
 const rateStore = useExchangeRateStore();
 const transactionStore = useTransactionStore();
+const { confirm: confirmDialog } = useConfirm();
 
 const activeFilter = ref<'ALL' | 'LENT' | 'BORROWED' | 'PAID'>('ALL');
 const isCreateModalOpen = ref(false);
@@ -118,7 +120,14 @@ async function handleUpdateLoan(
 }
 
 async function handleDeleteLoan(id: string) {
-  if (confirm('¿Estás seguro de eliminar este registro de préstamo?')) {
+  const confirmed = await confirmDialog({
+    title: 'Eliminar préstamo',
+    message: '¿Estás seguro de que deseas eliminar este registro de préstamo?',
+    confirmText: 'Eliminar',
+    variant: 'danger',
+  });
+
+  if (confirmed) {
     await loanStore.deleteLoan(id);
   }
 }

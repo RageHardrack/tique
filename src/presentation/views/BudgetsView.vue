@@ -9,6 +9,7 @@ import { useCategoryStore } from '../store/categories';
 import { useTransactionStore } from '../store/transactions';
 import { useExchangeRateStore } from '../store/exchange-rates';
 import type { SupportedCurrency } from '../../core/entities/Account';
+import { useConfirm } from '../composables/useConfirm';
 import BudgetsSection from '../components/budgets/BudgetsSection.vue';
 
 const authStore = useAuthStore();
@@ -17,6 +18,7 @@ const budgetStore = useBudgetStore();
 const categoryStore = useCategoryStore();
 const transactionStore = useTransactionStore();
 const rateStore = useExchangeRateStore();
+const { confirm: confirmDialog } = useConfirm();
 
 onMounted(async () => {
   if (authStore.user?.id) {
@@ -70,7 +72,14 @@ async function handleUpdate(
 }
 
 async function handleDelete(id: string) {
-  if (confirm('¿Estás seguro de eliminar este presupuesto?')) {
+  const confirmed = await confirmDialog({
+    title: 'Eliminar presupuesto',
+    message: '¿Estás seguro de que deseas eliminar este presupuesto?',
+    confirmText: 'Eliminar',
+    variant: 'danger',
+  });
+
+  if (confirmed) {
     await budgetStore.deleteBudget(id);
   }
 }
