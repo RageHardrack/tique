@@ -1,3 +1,4 @@
+import { DateFormatter } from './DateFormatter';
 import type { Category } from '../entities/Category';
 import type { Transaction } from '../entities/Transaction';
 import type { SupportedCurrency } from '../entities/Account';
@@ -180,10 +181,7 @@ export class AnalyticsService {
       const year = d.getFullYear();
       const month = d.getMonth();
       const key = `${year}-${String(month + 1).padStart(2, '0')}`;
-      const label = d.toLocaleDateString('es-ES', {
-        month: 'short',
-        year: 'numeric',
-      });
+      const label = DateFormatter.format(tx.date, 'MMM YYYY');
       const sortKey = year * 100 + month;
 
       if (!monthMap.has(key)) {

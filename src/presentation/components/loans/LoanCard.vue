@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import type { Loan } from '../../../core/entities/Loan';
 import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
+import { DateFormatter } from '../../../core/services/DateFormatter';
 import { useExchangeRateStore } from '../../store/exchange-rates';
 
 interface Props {
@@ -45,8 +46,7 @@ function format(amount: number, currency?: string) {
 
 function formatDate(dateStr?: string | null) {
   if (!dateStr) return 'Sin fecha límite';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
+  return DateFormatter.format(dateStr, 'DD MMM YYYY');
 }
 </script>
 

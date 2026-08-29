@@ -1,3 +1,4 @@
+import { DateFormatter } from './DateFormatter';
 import type { Subscription } from '../entities/Subscription';
 
 export type ReminderUrgency = 'OVERDUE' | 'DUE_TODAY' | 'DUE_SOON' | 'NORMAL';
@@ -115,11 +116,7 @@ export class ReminderService {
       // Only include overdue or due within the threshold window
       if (daysRemaining <= thresholdDays) {
         const category = sub.categoryId ? categoriesMap[sub.categoryId] : undefined;
-        const dueDateObj = this.parseLocalDate(sub.nextDueDate);
-        const formattedDueDate = dueDateObj.toLocaleDateString('es-ES', {
-          day: 'numeric',
-          month: 'short',
-        });
+        const formattedDueDate = DateFormatter.format(sub.nextDueDate, 'D MMM');
 
         reminders.push({
           subscription: sub,

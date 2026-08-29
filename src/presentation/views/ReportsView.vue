@@ -21,6 +21,7 @@ import DateRangeSelector from '../components/reports/DateRangeSelector.vue';
 import ReportSummaryCards from '../components/reports/ReportSummaryCards.vue';
 import IncomeVsExpenseTrend from '../components/reports/IncomeVsExpenseTrend.vue';
 import { CurrencyConverter } from '../../core/services/CurrencyConverter';
+import { DateFormatter } from '../../core/services/DateFormatter';
 
 import { CsvExportService } from '../../core/services/CsvExportService';
 import { PdfExportService } from '../../core/services/PdfExportService';
@@ -289,7 +290,7 @@ function handleExportPdf() {
                 class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
               >
                 <td class="py-3 px-2 text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                  {{ new Date(tx.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) }}
+                  {{ DateFormatter.format(tx.date, 'DD MMM YYYY') }}
                 </td>
                 <td class="py-3 px-2 text-xs font-bold">
                   <span

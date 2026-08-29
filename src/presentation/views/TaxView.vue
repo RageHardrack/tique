@@ -4,6 +4,7 @@ import AppLayout from '../layouts/AppLayout.vue';
 import { useAuthStore } from '../store/auth';
 import { useTaxStore } from '../store/tax.store';
 import { CurrencyFormatter } from '../../core/services/CurrencyFormatter';
+import { DateFormatter } from '../../core/services/DateFormatter';
 
 const authStore = useAuthStore();
 const taxStore = useTaxStore();
@@ -330,7 +331,7 @@ function getDeductionLabel(type: string) {
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
                 <tr v-for="item in deductibles" :key="item.id">
-                  <td class="py-2 px-3">{{ new Date(item.date).toLocaleDateString() }}</td>
+                  <td class="py-2 px-3">{{ DateFormatter.format(item.date, 'DD/MM/YYYY') }}</td>
                   <td class="py-2 px-3 font-sans">{{ getDeductionLabel(item.deductionType) }}</td>
                   <td class="py-2 px-3">{{ item.documentNumber || '-' }}</td>
                   <td class="py-2 px-3 font-sans">{{ item.note || '-' }}</td>

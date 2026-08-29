@@ -6,6 +6,7 @@ import type { Category } from '../../../core/entities/Category';
 import type { Transaction, TransactionType } from '../../../core/entities/Transaction';
 import type { TaxCategory, TaxDeductionType, TaxDocumentType } from '../../../core/entities/Tax';
 import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
+import { DateFormatter } from '../../../core/services/DateFormatter';
 import { useExchangeRateStore } from '../../store/exchange-rates';
 
 interface Props {
@@ -62,7 +63,7 @@ const emit = defineEmits<{
   ): void;
 }>();
 
-const today = new Date().toISOString().slice(0, 10);
+const today = DateFormatter.toInputDate();
 
 const form = reactive<{
   type: TransactionType;
@@ -207,7 +208,7 @@ watch(
             ? props.transaction.amount
             : null);
         form.exchangeRate = props.transaction.exchangeRate ?? null;
-        form.date = new Date(props.transaction.date).toISOString().slice(0, 10);
+        form.date = DateFormatter.toInputDate(props.transaction.date);
         form.note = props.transaction.note || '';
         form.taxCategory = props.transaction.taxCategory || 'NONE';
         form.taxDocumentType = props.transaction.taxDocumentType || 'NONE';
@@ -311,7 +312,7 @@ function resetForm() {
   form.amount = null;
   form.destinationAmount = null;
   form.exchangeRate = null;
-  form.date = new Date().toISOString().slice(0, 10);
+  form.date = DateFormatter.toInputDate();
   form.note = '';
   form.taxCategory = 'NONE';
   form.taxDocumentType = 'NONE';
@@ -374,6 +375,8 @@ function handleSubmit() {
           : undefined
       : undefined;
 
+  const isoDate = DateFormatter.toIsoString(form.date);
+
   try {
     if (props.transaction?.id) {
       emit('updated', props.transaction.id, {
@@ -385,7 +388,7 @@ function handleSubmit() {
         amount: Number(form.amount),
         destinationAmount: destinationAmountValue,
         exchangeRate: exchangeRateValue,
-        date: new Date(form.date).toISOString(),
+        date: isoDate,
         note: form.note.trim() || undefined,
         taxCategory: form.taxCategory,
         taxDocumentType: form.taxDocumentType,
@@ -403,7 +406,7 @@ function handleSubmit() {
         amount: Number(form.amount),
         destinationAmount: destinationAmountValue,
         exchangeRate: exchangeRateValue,
-        date: new Date(form.date).toISOString(),
+        date: isoDate,
         note: form.note.trim() || undefined,
         taxCategory: form.taxCategory,
         taxDocumentType: form.taxDocumentType,

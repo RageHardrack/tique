@@ -1,3 +1,4 @@
+import { DateFormatter } from './DateFormatter';
 import type { Account } from '../entities/Account';
 import type { Category } from '../entities/Category';
 import type { Transaction } from '../entities/Transaction';
@@ -35,13 +36,10 @@ export class PdfExportService {
     const accountsMap = new Map<string, Account>(accounts.map((a) => [a.id, a]));
     const categoriesMap = new Map<string, Category>(categories.map((c) => [c.id, c]));
 
-    const emissionDate = new Date().toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const emissionDate = DateFormatter.format(
+      new Date(),
+      'DD [de] MMMM [de] YYYY, HH:mm',
+    );
 
     const categoryRows =
       categoryBreakdown.length > 0
@@ -69,11 +67,7 @@ export class PdfExportService {
       transactions.length > 0
         ? transactions
             .map((tx) => {
-              const d = new Date(tx.date).toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-              });
+              const d = DateFormatter.format(tx.date, 'DD/MM/YYYY');
               const typeLabel =
                 tx.type === 'INCOME'
                   ? '<span style="color: #059669; font-weight: bold;">Ingreso</span>'

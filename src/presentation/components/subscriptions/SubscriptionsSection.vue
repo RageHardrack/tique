@@ -4,6 +4,7 @@ import { computed, ref } from 'vue';
 import type { Category } from '../../../core/entities/Category';
 import CreateSubscriptionModal from './CreateSubscriptionModal.vue';
 import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
+import { DateFormatter } from '../../../core/services/DateFormatter';
 import type {
   Account,
   SupportedCurrency,
@@ -145,11 +146,7 @@ const displayItems = computed<SubscriptionDisplayItem[]>(() => {
       urgencyBadgeText = `Vence en ${days} días`;
     }
 
-    const dueDateObj = new Date(s.nextDueDate);
-    const formattedDueDate = dueDateObj.toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'short',
-    });
+    const formattedDueDate = DateFormatter.format(s.nextDueDate, 'D MMM');
 
     return {
       subscription: s,

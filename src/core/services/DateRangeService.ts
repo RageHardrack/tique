@@ -1,3 +1,5 @@
+import { DateFormatter } from './DateFormatter';
+
 export type TimeWindowPreset =
   | 'MONTHLY'
   | 'BI_MONTHLY'
@@ -105,25 +107,13 @@ export class DateRangeService {
    * Formats start and end dates in a clean, human-readable Spanish locale string.
    */
   static formatDateRange(start: Date, end: Date): string {
-    const formatOpts: Intl.DateTimeFormatOptions = {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    };
-
-    const startStr = start.toLocaleDateString('es-ES', formatOpts);
-    const endStr = end.toLocaleDateString('es-ES', formatOpts);
-
-    return `${startStr} - ${endStr}`;
+    return DateFormatter.formatRange(start, end, 'D MMM YYYY');
   }
 
   /**
    * Formats a date to YYYY-MM-DD for standard date input elements.
    */
   static toInputDateString(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return DateFormatter.toInputDate(date);
   }
 }

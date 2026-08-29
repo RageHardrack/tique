@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 
 import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
+import { DateFormatter } from '../../../core/services/DateFormatter';
 import type {
   Transaction,
   TransactionType,
@@ -94,12 +95,7 @@ const formattedDestinationAmount = computed(() => {
 
 const formattedDate = computed(() => {
   if (!props.transaction.date) return '';
-  const d = new Date(props.transaction.date);
-  return d.toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+  return DateFormatter.format(props.transaction.date, 'DD MMM YYYY');
 });
 
 function handleDelete() {
