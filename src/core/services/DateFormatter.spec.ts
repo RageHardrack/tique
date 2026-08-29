@@ -1,29 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import { DateFormatter } from './DateFormatter';
 
-describe('DateFormatter Service (dayjs)', () => {
+describe('DateFormatter Service (dayjs & Timezone Protection)', () => {
   it('formats YYYY-MM-DD date string without previous-day shift', () => {
-    const formatted = DateFormatter.format('2026-08-29', 'DD/MM/YYYY');
-    expect(formatted).toBe('29/08/2026');
+    expect(DateFormatter.format('2026-09-06', 'DD/MM/YYYY')).toBe('06/09/2026');
+    expect(DateFormatter.format('2026-09-06', 'DD MMM YYYY')).toBe('06 sep 2026');
   });
 
-  it('formats full ISO date string correctly', () => {
-    const formatted = DateFormatter.format('2026-08-29T15:00:00.000Z', 'DD MMM YYYY');
-    expect(formatted).toContain('2026');
+  it('formats ISO midnight string (T00:00:00.000Z) preserving the exact calendar day', () => {
+    expect(DateFormatter.format('2026-09-06T00:00:00.000Z', 'DD/MM/YYYY')).toBe('06/09/2026');
+    expect(DateFormatter.format('2026-09-06T00:00:00.000Z', 'DD MMM YYYY')).toBe('06 sep 2026');
   });
 
-  it('converts to input date YYYY-MM-DD format', () => {
-    expect(DateFormatter.toInputDate('2026-08-29T10:00:00.000Z')).toBe('2026-08-29');
-    expect(DateFormatter.toInputDate('2026-08-29')).toBe('2026-08-29');
+  it('formats ISO noon string (T12:00:00.000Z) correctly', () => {
+    expect(DateFormatter.format('2026-09-06T12:00:00.000Z', 'DD/MM/YYYY')).toBe('06/09/2026');
+    expect(DateFormatter.format('2026-09-06T12:00:00.000Z', 'DD MMM YYYY')).toBe('06 sep 2026');
   });
 
-  it('converts date to safe ISO string without losing day', () => {
-    const iso = DateFormatter.toIsoString('2026-08-29');
-    expect(iso).toBe('2026-08-29T12:00:00.000Z');
+  it('converts ISO midnight to input date YYYY-MM-DD format without losing day', () => {
+    expect(DateFormatter.toInputDate('2026-09-06T00:00:00.000Z')).toBe('2026-09-06');
+    expect(DateFormatter.toInputDate('2026-09-06')).toBe('2026-09-06');
+    expect(DateFormatter.toInputDate('2026-09-06T23:59:59.999Z')).toBe('2026-09-06');
   });
 
-  it('formats date range cleanly', () => {
-    const range = DateFormatter.formatRange('2026-08-01', '2026-08-31', 'DD/MM/YYYY');
-    expect(range).toBe('01/08/2026 - 31/08/2026');
+  it('converts date to safe noon ISO string', () => {
+    expect(DateFormatter.toIsoString('2026-09-06')).toBe('2026-09-06T12:00:00.000Z');
+  });
+
+  it('formats date range cleanly preserving calendar dates', () => {
+    const range = DateFormatter.formatRange('2026-09-01T00:00:00.000Z', '2026-09-30T00:00:00.000Z', 'DD/MM/YYYY');
+    expect(range).toBe('01/09/2026 - 30/09/2026');
   });
 });
