@@ -198,6 +198,10 @@ describe('Exhaustive DELETE Operations Suite - UI Components', () => {
         targetAmount: 4000,
         currentAmount: 1500,
         currency: 'USD',
+        targetDate: null,
+        color: null,
+        icon: null,
+        isCompleted: false,
         createdAt: '',
         updatedAt: '',
       };
@@ -205,6 +209,7 @@ describe('Exhaustive DELETE Operations Suite - UI Components', () => {
       const wrapper = mount(GoalCard, {
         props: {
           goal: mockGoal,
+          baseCurrency: 'USD',
           formatFn: (amt: number, cur: string) => `$${amt} ${cur}`,
         },
       });
@@ -229,6 +234,7 @@ describe('Exhaustive DELETE Operations Suite - UI Components', () => {
         amount: 1000,
         remainingAmount: 600,
         currency: 'USD',
+        status: 'PENDING' as const,
         createdAt: '',
         updatedAt: '',
       };
