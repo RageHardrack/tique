@@ -1,6 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia';
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useExchangeRateStore } from './exchange-rates';
 
@@ -49,5 +49,27 @@ describe('useExchangeRateStore', () => {
     store.setBaseCurrency('PEN');
     const inPEN = store.convert(100, 'USD');
     expect(inPEN).toBe(375);
+  });
+
+  it('should fetch official rates from backend API and update store', async () => {
+    const store = useExchangeRateStore();
+
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        baseCurrency: 'USD',
+        rates: { USD: 1, PEN: 3.356, VES: 791.66 },
+        sources: { USD: 'FIXED', PEN: 'SUNAT', VES: 'BCV' },
+        lastUpdated: '2026-08-29T20:00:00.000Z',
+      }),
+    } as any);
+
+    await store.fetchRates();
+
+    expect(store.rates.PEN).toBe(3.356);
+    expect(store.rates.VES).toBe(791.66);
+    expect(store.sources.PEN).toBe('SUNAT');
+    expect(store.sources.VES).toBe('BCV');
+    expect(store.lastUpdated).toBe('2026-08-29T20:00:00.000Z');
   });
 });

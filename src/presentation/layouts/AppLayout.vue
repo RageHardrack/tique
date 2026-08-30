@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import TopNav from '../components/navigation/TopNav.vue';
 import SidebarNav from '../components/navigation/SidebarNav.vue';
 import MobileBottomNav from '../components/navigation/MobileBottomNav.vue';
 import QuickAddFab from '../components/quick-add/QuickAddFab.vue';
+import { useExchangeRateStore } from '../store/exchange-rates';
 
 interface Props {
   title?: string;
@@ -10,6 +12,12 @@ interface Props {
 }
 
 defineProps<Props>();
+
+const rateStore = useExchangeRateStore();
+
+onMounted(() => {
+  rateStore.fetchRates();
+});
 </script>
 
 <template>

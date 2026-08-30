@@ -8,9 +8,12 @@ import {
   DEFAULT_EXCHANGE_RATES,
   type ExchangeRates,
 } from '../../core/services/CurrencyConverter';
+import { ApiClient } from '../../infrastructure/api/api-client';
 
 const STORAGE_KEY_BASE = 'financiapp_base_currency';
 const STORAGE_KEY_RATES = 'financiapp_exchange_rates';
+const STORAGE_KEY_SOURCES = 'financiapp_exchange_sources';
+const STORAGE_KEY_UPDATED = 'financiapp_exchange_updated_at';
 
 function loadStoredBase(): SupportedCurrency {
   try {
@@ -45,9 +48,31 @@ function loadStoredRates(): ExchangeRates {
   return { ...DEFAULT_EXCHANGE_RATES };
 }
 
+function loadStoredSources(): Record<string, string> {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEY_SOURCES);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    }
+  } catch {
+    // Ignore error
+  }
+  return { USD: 'FIXED', PEN: 'SUNAT', VES: 'BCV' };
+}
+
 export const useExchangeRateStore = defineStore('exchangeRates', () => {
   const baseCurrency = ref<SupportedCurrency>(loadStoredBase());
   const rates = ref<ExchangeRates>(loadStoredRates());
+  const sources = ref<Record<string, string>>(loadStoredSources());
+  const lastUpdated = ref<string | null>(
+    typeof localStorage !== 'undefined'
+      ? localStorage.getItem(STORAGE_KEY_UPDATED)
+      : null,
+  );
+  const isLoading = ref(false);
+  const isSyncing = ref(false);
 
   function setBaseCurrency(currency: SupportedCurrency) {
     baseCurrency.value = currency;
@@ -65,9 +90,11 @@ export const useExchangeRateStore = defineStore('exchangeRates', () => {
     if (rate <= 0) return;
 
     rates.value[currency] = rate;
+    sources.value[currency] = 'MANUAL';
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(STORAGE_KEY_RATES, JSON.stringify(rates.value));
+        localStorage.setItem(STORAGE_KEY_SOURCES, JSON.stringify(sources.value));
       }
     } catch {
       // Ignore error
@@ -76,12 +103,62 @@ export const useExchangeRateStore = defineStore('exchangeRates', () => {
 
   function resetRates() {
     rates.value = { ...DEFAULT_EXCHANGE_RATES };
+    sources.value = { USD: 'FIXED', PEN: 'SUNAT', VES: 'BCV' };
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.removeItem(STORAGE_KEY_RATES);
+        localStorage.removeItem(STORAGE_KEY_SOURCES);
+        localStorage.removeItem(STORAGE_KEY_UPDATED);
       }
     } catch {
       // Ignore error
+    }
+  }
+
+  async function fetchRates() {
+    isLoading.value = true;
+    try {
+      const data = await ApiClient.get<{
+        baseCurrency: 'USD';
+        rates: { USD: number; PEN: number; VES: number };
+        sources: Record<string, string>;
+        lastUpdated: string;
+      }>('/exchange-rates');
+
+      if (data && data.rates) {
+        rates.value = {
+          USD: 1,
+          PEN: data.rates.PEN || rates.value.PEN,
+          VES: data.rates.VES || rates.value.VES,
+        };
+        if (data.sources) {
+          sources.value = data.sources;
+        }
+        if (data.lastUpdated) {
+          lastUpdated.value = data.lastUpdated;
+        }
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(STORAGE_KEY_RATES, JSON.stringify(rates.value));
+          localStorage.setItem(STORAGE_KEY_SOURCES, JSON.stringify(sources.value));
+          if (lastUpdated.value) {
+            localStorage.setItem(STORAGE_KEY_UPDATED, lastUpdated.value);
+          }
+        }
+      }
+    } catch {
+      // Silently fall back to cached local storage rates
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function syncRates(token?: string | null) {
+    isSyncing.value = true;
+    try {
+      await ApiClient.post('/exchange-rates/sync', {}, token);
+      await fetchRates();
+    } finally {
+      isSyncing.value = false;
     }
   }
 
@@ -97,9 +174,15 @@ export const useExchangeRateStore = defineStore('exchangeRates', () => {
   return {
     baseCurrency,
     rates,
+    sources,
+    lastUpdated,
+    isLoading,
+    isSyncing,
     setBaseCurrency,
     updateRate,
     resetRates,
+    fetchRates,
+    syncRates,
     convert,
   };
 });

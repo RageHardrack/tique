@@ -11,8 +11,9 @@ dayjs.locale('es');
 
 export class DateFormatter {
   /**
-   * Formats any date (ISO string, YYYY-MM-DD, Date object) into a localized Spanish string.
-   * Guaranteed to preserve the intended calendar day across all timezones.
+   * Formats any date (ISO string, timestamp, YYYY-MM-DD, Date object) into a localized Spanish string.
+   * - If date is an ISO timestamp with time (e.g. 9:00 PM local stored in UTC), it renders in the user's local timezone.
+   * - If date is a pure YYYY-MM-DD string or legacy UTC midnight, it preserves the exact calendar day.
    */
   static format(
     date: string | Date | null | undefined,
@@ -21,14 +22,20 @@ export class DateFormatter {
     if (!date) return '';
 
     if (typeof date === 'string') {
-      const match = date.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
-      if (match) {
-        const [, year, month, day] = match;
-        return dayjs(
-          new Date(Number(year), Number(month) - 1, Number(day)),
-        ).format(formatStr);
+      const trimmed = date.trim();
+      // Pure calendar date string: YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        const [year, month, day] = trimmed.split('-').map(Number);
+        return dayjs(new Date(year, month - 1, day)).format(formatStr);
       }
-      return dayjs(date).format(formatStr);
+
+      // Legacy UTC midnight timestamp (T00:00:00.000Z without hours)
+      if (/^\d{4}-\d{2}-\d{2}T00:00:00(\.000)?Z?$/.test(trimmed)) {
+        return dayjs.utc(trimmed).format(formatStr);
+      }
+
+      // Full timestamp with time: format in user's local browser timezone
+      return dayjs(trimmed).format(formatStr);
     }
 
     if (date instanceof Date) {
@@ -46,7 +53,7 @@ export class DateFormatter {
   }
 
   /**
-   * Formats a date for standard HTML date inputs (YYYY-MM-DD).
+   * Formats a date for standard HTML date inputs (YYYY-MM-DD) in local timezone.
    */
   static toInputDate(
     date: string | Date | null | undefined = new Date(),
@@ -54,25 +61,18 @@ export class DateFormatter {
     if (!date) return dayjs().format('YYYY-MM-DD');
 
     if (typeof date === 'string') {
-      const match = date.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
-      if (match) {
-        return `${match[1]}-${match[2]}-${match[3]}`;
+      const trimmed = date.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        return trimmed;
       }
-      return dayjs(date).format('YYYY-MM-DD');
+      if (/^\d{4}-\d{2}-\d{2}T00:00:00(\.000)?Z?$/.test(trimmed)) {
+        return dayjs.utc(trimmed).format('YYYY-MM-DD');
+      }
+      return dayjs(trimmed).format('YYYY-MM-DD');
     }
 
     if (date instanceof Date) {
-      if (
-        date.getUTCHours() === 0 &&
-        date.getUTCMinutes() === 0 &&
-        date.getUTCSeconds() === 0
-      ) {
-        return dayjs.utc(date).format('YYYY-MM-DD');
-      }
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
+      return dayjs(date).format('YYYY-MM-DD');
     }
 
     return dayjs(date).format('YYYY-MM-DD');
@@ -80,14 +80,36 @@ export class DateFormatter {
 
   /**
    * Converts a date string or Date to a safe ISO string.
+   * If given a YYYY-MM-DD string:
+   * - If it matches today's local date, attaches current local time (hours, minutes, seconds).
+   * - Otherwise, uses midday (12:00:00) local time to safely remain on that calendar date in all timezones.
    */
   static toIsoString(date: string | Date): string {
     if (typeof date === 'string') {
-      const match = date.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
-      if (match) {
-        return `${match[1]}-${match[2]}-${match[3]}T12:00:00.000Z`;
+      const trimmed = date.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        const [year, month, day] = trimmed.split('-').map(Number);
+        const now = new Date();
+        const isToday =
+          now.getFullYear() === year &&
+          now.getMonth() === month - 1 &&
+          now.getDate() === day;
+
+        if (isToday) {
+          return new Date(
+            year,
+            month - 1,
+            day,
+            now.getHours(),
+            now.getMinutes(),
+            now.getSeconds(),
+            now.getMilliseconds(),
+          ).toISOString();
+        }
+
+        return new Date(Date.UTC(year, month - 1, day, 12, 0, 0)).toISOString();
       }
-      return dayjs(date).toISOString();
+      return dayjs(trimmed).toISOString();
     }
     return dayjs(date).toISOString();
   }
