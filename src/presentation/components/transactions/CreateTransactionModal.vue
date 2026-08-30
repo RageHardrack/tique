@@ -8,6 +8,7 @@ import type { TaxCategory, TaxDeductionType, TaxDocumentType } from '../../../co
 import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
 import { DateFormatter } from '../../../core/services/DateFormatter';
 import { useExchangeRateStore } from '../../store/exchange-rates';
+import { useAuthStore } from '../../store/auth';
 
 interface Props {
   transaction?: Transaction | null;
@@ -18,6 +19,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const rateStore = useExchangeRateStore();
+const authStore = useAuthStore();
 
 const open = defineModel<boolean>('open', { default: false });
 
@@ -674,7 +676,7 @@ function handleSubmit() {
 
         <!-- Tax Metadata Section (SUNAT / Impuestos) -->
         <div
-          v-if="form.type !== 'TRANSFER'"
+          v-if="form.type !== 'TRANSFER' && authStore.user?.taxProfileEnabled && authStore.user?.taxCountry === 'PE'"
           class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0f1523]/60 space-y-3"
         >
           <div class="flex items-center justify-between">

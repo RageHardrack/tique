@@ -336,9 +336,9 @@ function handleSubmit() {
           />
         </div>
 
-        <!-- Regla Tributaria SUNAT (Opcional - visible si el usuario tiene activo su perfil tributario) -->
+        <!-- Regla Tributaria SUNAT (Opcional - visible si el usuario tiene activo su perfil tributario en Perú) -->
         <div
-          v-if="taxStore.profile.taxProfileEnabled"
+          v-if="taxStore.profile.taxProfileEnabled && authStore.user?.taxCountry === 'PE'"
           class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0f1523]/60 space-y-3"
         >
           <div class="flex items-center justify-between">

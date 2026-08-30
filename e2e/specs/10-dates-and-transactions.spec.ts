@@ -10,12 +10,13 @@ test.describe('E2E - Date Precision and Transaction Deletion', () => {
     await authenticatedPage.waitForLoadState('networkidle');
 
     // Click "Nuevo Movimiento"
-    const newTxBtn = authenticatedPage.getByRole('button', { name: /Nuevo Movimiento/i });
+    const newTxBtn = authenticatedPage.getByRole('button', { name: 'Nuevo Movimiento' });
+    await expect(newTxBtn).toBeEnabled({ timeout: 10000 });
     await newTxBtn.click();
 
     // Fill form
-    const modal = authenticatedPage.getByRole('dialog');
-    await expect(modal).toBeVisible();
+    const modal = authenticatedPage.locator('[role="dialog"], [data-slot="content"]').first();
+    await expect(modal).toBeVisible({ timeout: 10000 });
 
     // Enter amount
     const amountInput = modal.getByPlaceholder('0.00');
@@ -60,7 +61,7 @@ test.describe('E2E - Date Precision and Transaction Deletion', () => {
     const deleteBtn = createdItem.getByRole('button', { name: /Eliminar movimiento/i });
     await deleteBtn.click();
 
-    const confirmModal = authenticatedPage.getByRole('dialog');
+    const confirmModal = authenticatedPage.locator('[role="dialog"], [data-slot="content"]').first();
     await expect(confirmModal).toBeVisible();
     const confirmDeleteBtn = confirmModal.getByRole('button', { name: 'Eliminar', exact: true });
     await confirmDeleteBtn.click();

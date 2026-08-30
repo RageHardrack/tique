@@ -21,6 +21,7 @@ function createTestRouter() {
     { path: '/presupuestos', name: 'budgets', component: BudgetsView, meta: { requiresAuth: true } },
     { path: '/metas', name: 'goals', component: DashboardView, meta: { requiresAuth: true } },
     { path: '/suscripciones', name: 'subscriptions', component: SubscriptionsView, meta: { requiresAuth: true } },
+    { path: '/impuestos', name: 'tax', component: DashboardView, meta: { requiresAuth: true } },
     { path: '/categorias', name: 'categories', component: CategoriesView, meta: { requiresAuth: true } },
     { path: '/reportes', name: 'reports', component: DashboardView, meta: { requiresAuth: true } },
     { path: '/admin/users', name: 'admin-users', component: DashboardView, meta: { requiresAuth: true, requiresAdmin: true } },
@@ -39,6 +40,8 @@ function createTestRouter() {
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
       next('/login');
     } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
+      next('/dashboard');
+    } else if (to.name === 'tax' && (!authStore.user?.taxProfileEnabled || authStore.user?.taxCountry !== 'PE')) {
       next('/dashboard');
     } else if (to.name === 'login' && authStore.isAuthenticated) {
       next('/dashboard');
@@ -155,5 +158,41 @@ describe('Vue Router - Route Protection and Navigation Guards', () => {
     await testRouter.push('/login');
     await testRouter.isReady();
     expect(testRouter.currentRoute.value.path).toBe('/dashboard');
+  });
+
+  it('should redirect non-PE user from /impuestos to /dashboard', async () => {
+    const authStore = useAuthStore();
+    authStore.accessToken = 'valid-token';
+    authStore.user = {
+      id: 'u-venezuela',
+      email: 'madre@lascar.dev',
+      name: 'Madre',
+      role: 'USER',
+      taxProfileEnabled: false,
+      taxCountry: 'VE',
+      createdAt: '',
+    };
+
+    await testRouter.push('/impuestos');
+    await testRouter.isReady();
+    expect(testRouter.currentRoute.value.path).toBe('/dashboard');
+  });
+
+  it('should allow PE user with active tax profile to access /impuestos', async () => {
+    const authStore = useAuthStore();
+    authStore.accessToken = 'valid-token';
+    authStore.user = {
+      id: 'u-peru',
+      email: 'daniel@lascar.dev',
+      name: 'Daniel',
+      role: 'USER',
+      taxProfileEnabled: true,
+      taxCountry: 'PE',
+      createdAt: '',
+    };
+
+    await testRouter.push('/impuestos');
+    await testRouter.isReady();
+    expect(testRouter.currentRoute.value.path).toBe('/impuestos');
   });
 });

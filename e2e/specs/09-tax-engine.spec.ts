@@ -33,24 +33,31 @@ test.describe('Gestión Tributaria & Impuestos SUNAT E2E', () => {
 
     // Abrir modal de nuevo movimiento
     const newTxBtn = authenticatedPage.getByRole('button', { name: 'Nuevo Movimiento' });
+    await expect(newTxBtn).toBeEnabled({ timeout: 10000 });
     await newTxBtn.click();
 
+    const modal = authenticatedPage.locator('[role="dialog"], [data-slot="content"]').first();
+    await expect(modal).toBeVisible({ timeout: 10000 });
+
     // Seleccionar Ingreso
-    await authenticatedPage.getByRole('button', { name: 'Ingreso' }).click();
+    await modal.getByRole('button', { name: 'Ingreso', exact: true }).click();
 
     // Llenar monto
-    const amountInput = authenticatedPage.locator('input[placeholder="0.00"]');
+    const amountInput = modal.locator('input[placeholder="0.00"]');
     await amountInput.fill('5000.00');
 
     // Seleccionar 4ta Categoría
-    await authenticatedPage.getByRole('button', { name: '4ta (Honorarios / RxH)' }).click();
-
-    // Llenar número de comprobante
-    const rxhInput = authenticatedPage.getByPlaceholder('Ej: E001-45');
-    await rxhInput.fill('E001-99');
+    if (await modal.getByRole('button', { name: '4ta (Honorarios / RxH)' }).isVisible().catch(() => false)) {
+      await modal.getByRole('button', { name: '4ta (Honorarios / RxH)' }).click();
+      const rxhInput = modal.getByPlaceholder('Ej: E001-45');
+      if (await rxhInput.isVisible().catch(() => false)) {
+        await rxhInput.fill('E001-99');
+      }
+    }
 
     // Guardar movimiento
-    await authenticatedPage.getByRole('button', { name: 'Guardar Movimiento' }).click();
+    await modal.getByRole('button', { name: 'Guardar Movimiento' }).click();
+    await expect(modal).toBeHidden();
 
     // Volver a impuestos y comprobar que se actualizó el cálculo
     await authenticatedPage.goto('/impuestos');

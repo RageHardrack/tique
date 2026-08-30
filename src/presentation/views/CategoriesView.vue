@@ -308,21 +308,23 @@ async function handleDelete(id: string) {
                 }}
               </span>
 
-              <!-- Etiqueta SUNAT si tiene regla asociada -->
-              <span
-                v-if="cat.taxDeductionType && cat.taxDeductionType !== 'NONE'"
-                class="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-1.5 py-0.5 rounded"
-              >
-                <UIcon name="i-heroicons-scale" class="w-3 h-3" />
-                3 UIT ({{ cat.taxDeductionType === 'RENTAL' || cat.taxDeductionType === 'PROFESSIONAL_SERVICE' ? '30%' : (cat.taxDeductionType === 'DOMESTIC_WORKER' ? '100%' : '15%') }})
-              </span>
-              <span
-                v-else-if="cat.taxCategory && cat.taxCategory === 'FOURTH_CATEGORY_INCOME'"
-                class="inline-flex items-center gap-1 text-[10px] font-medium text-amber-400 bg-amber-950/60 border border-amber-800/40 px-1.5 py-0.5 rounded"
-              >
-                <UIcon name="i-heroicons-scale" class="w-3 h-3" />
-                4ta Cat (8%)
-              </span>
+              <!-- Etiqueta SUNAT si tiene regla asociada y el usuario tiene activo su perfil tributario en Perú -->
+              <template v-if="authStore.user?.taxProfileEnabled && authStore.user?.taxCountry === 'PE'">
+                <span
+                  v-if="cat.taxDeductionType && cat.taxDeductionType !== 'NONE'"
+                  class="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-1.5 py-0.5 rounded"
+                >
+                  <UIcon name="i-heroicons-scale" class="w-3 h-3" />
+                  3 UIT ({{ cat.taxDeductionType === 'RENTAL' || cat.taxDeductionType === 'PROFESSIONAL_SERVICE' ? '30%' : (cat.taxDeductionType === 'DOMESTIC_WORKER' ? '100%' : '15%') }})
+                </span>
+                <span
+                  v-else-if="cat.taxCategory && cat.taxCategory === 'FOURTH_CATEGORY_INCOME'"
+                  class="inline-flex items-center gap-1 text-[10px] font-medium text-amber-400 bg-amber-950/60 border border-amber-800/40 px-1.5 py-0.5 rounded"
+                >
+                  <UIcon name="i-heroicons-scale" class="w-3 h-3" />
+                  4ta Cat (8%)
+                </span>
+              </template>
             </div>
 
             <span

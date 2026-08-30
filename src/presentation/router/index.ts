@@ -112,6 +112,8 @@ router.beforeEach(async (to, _from, next) => {
     next('/login');
   } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
     next('/dashboard');
+  } else if (to.name === 'tax' && (!authStore.user?.taxProfileEnabled || authStore.user?.taxCountry !== 'PE')) {
+    next('/dashboard');
   } else if (to.name === 'login' && authStore.isAuthenticated) {
     next('/dashboard');
   } else {

@@ -80,7 +80,13 @@ const navItems: NavItem[] = [
 ];
 
 const displayedNavItems = computed(() => {
-  const items = [...navItems];
+  let items = [...navItems];
+
+  // Solo mostrar el módulo de Impuestos & SUNAT si el usuario lo tiene explícitamente activado para Perú
+  if (!authStore.user?.taxProfileEnabled || authStore.user?.taxCountry !== 'PE') {
+    items = items.filter((item) => item.name !== 'tax');
+  }
+
   if (authStore.isAdmin) {
     items.push({
       name: 'admin-users',
