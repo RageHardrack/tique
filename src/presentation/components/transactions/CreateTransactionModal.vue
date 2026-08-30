@@ -474,7 +474,7 @@ function handleSubmit() {
         accountId: form.accountId,
         destinationAccountId:
           form.type === 'TRANSFER' ? form.destinationAccountId : undefined,
-        categoryId: form.categoryId || undefined,
+        categoryId: form.categoryId ? form.categoryId : null,
         amount: Number(form.amount),
         destinationAmount: destinationAmountValue,
         exchangeRate: exchangeRateValue,
