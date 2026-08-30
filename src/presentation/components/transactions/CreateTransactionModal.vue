@@ -37,7 +37,7 @@ const emit = defineEmits<{
       type: TransactionType;
       accountId: string;
       destinationAccountId?: string;
-      categoryId?: string;
+      categoryId?: string | null;
       amount: number;
       destinationAmount?: number;
       exchangeRate?: number;
@@ -57,7 +57,7 @@ const emit = defineEmits<{
       type: TransactionType;
       accountId: string;
       destinationAccountId?: string;
-      categoryId?: string;
+      categoryId?: string | null;
       amount: number;
       destinationAmount?: number;
       exchangeRate?: number;

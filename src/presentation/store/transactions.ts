@@ -17,7 +17,7 @@ export interface CreateTransactionInput {
   userId: string;
   accountId: string;
   destinationAccountId?: string;
-  categoryId?: string;
+  categoryId?: string | null;
   amount: number;
   destinationAmount?: number;
   exchangeRate?: number;

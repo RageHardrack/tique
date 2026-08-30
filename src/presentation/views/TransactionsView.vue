@@ -32,7 +32,7 @@ async function handleCreate(payload: {
   type: TransactionType;
   accountId: string;
   destinationAccountId?: string;
-  categoryId?: string;
+  categoryId?: string | null;
   amount: number;
   destinationAmount?: number;
   exchangeRate?: number;
@@ -53,7 +53,7 @@ async function handleUpdate(
     type: TransactionType;
     accountId: string;
     destinationAccountId?: string;
-    categoryId?: string;
+    categoryId?: string | null;
     amount: number;
     destinationAmount?: number;
     exchangeRate?: number;

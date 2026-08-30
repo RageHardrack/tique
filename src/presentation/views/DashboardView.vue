@@ -230,7 +230,7 @@ async function handleCreateTx(payload: {
   type: TransactionType;
   accountId: string;
   destinationAccountId?: string;
-  categoryId?: string;
+  categoryId?: string | null;
   amount: number;
   destinationAmount?: number;
   exchangeRate?: number;
@@ -251,7 +251,7 @@ async function handleUpdateTx(
     type: TransactionType;
     accountId: string;
     destinationAccountId?: string;
-    categoryId?: string;
+    categoryId?: string | null;
     amount: number;
     destinationAmount?: number;
     exchangeRate?: number;
