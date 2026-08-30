@@ -248,6 +248,83 @@ describe('Creation Modals Logic and Emits', () => {
         note: 'Cena familiar y propina',
       });
     });
+
+    it('should reset tax deduction metadata when editing transaction and changing to non-deductible category', async () => {
+      const deductibleCategory = {
+        id: 'cat-restaurant',
+        userId: 'u1',
+        name: 'Restaurantes y Bares',
+        type: 'EXPENSE' as const,
+        taxCategory: 'DEDUCTIBLE_EXPENSE_3UIT' as const,
+        taxDeductionType: 'RESTAURANT_BAR' as const,
+        createdAt: '',
+        updatedAt: '',
+      };
+
+      const normalCategory = {
+        id: 'cat-other',
+        userId: 'u1',
+        name: 'Otros Gastos',
+        type: 'EXPENSE' as const,
+        taxCategory: 'NONE' as const,
+        taxDeductionType: 'NONE' as const,
+        createdAt: '',
+        updatedAt: '',
+      };
+
+      const existingTx = {
+        id: 'tx-deductible-1',
+        userId: 'u1',
+        accountId: 'acc-1',
+        categoryId: 'cat-restaurant',
+        type: 'EXPENSE' as const,
+        amount: 150,
+        date: '2026-08-20T00:00:00.000Z',
+        note: 'Almuerzo ejecutivo',
+        taxCategory: 'DEDUCTIBLE_EXPENSE_3UIT' as const,
+        taxDeductionType: 'RESTAURANT_BAR' as const,
+        taxDocumentType: 'BOLETA' as const,
+        taxDocumentNumber: 'B001-1234',
+        createdAt: '',
+        updatedAt: '',
+      };
+
+      const wrapper = mount(CreateTransactionModal, {
+        props: {
+          open: true,
+          transaction: existingTx,
+          accounts: [{ id: 'acc-1', userId: 'u1', name: 'Main', type: 'CHECKING' as const, balance: 1000, currency: 'PEN', createdAt: '', updatedAt: '' }],
+          categories: [deductibleCategory, normalCategory],
+        },
+      });
+
+      const vm = wrapper.vm as any;
+      // Wait for nextTick initialization
+      await wrapper.vm.$nextTick();
+
+      expect(vm.form.taxCategory).toBe('DEDUCTIBLE_EXPENSE_3UIT');
+      expect(vm.form.taxDeductionType).toBe('RESTAURANT_BAR');
+
+      // Change category to non-deductible category
+      vm.form.categoryId = 'cat-other';
+      await wrapper.vm.$nextTick();
+
+      expect(vm.form.taxCategory).toBe('NONE');
+      expect(vm.form.taxDeductionType).toBe('NONE');
+      expect(vm.form.taxDocumentNumber).toBe('');
+
+      vm.handleSubmit();
+
+      const updatedEvents = wrapper.emitted('updated');
+      expect(updatedEvents).toBeTruthy();
+      expect(updatedEvents?.[0][0]).toBe('tx-deductible-1');
+      expect(updatedEvents?.[0][1]).toMatchObject({
+        type: 'EXPENSE',
+        categoryId: 'cat-other',
+        taxCategory: 'NONE',
+        taxDeductionType: 'NONE',
+      });
+    });
   });
 
   describe('CreateBudgetModal', () => {

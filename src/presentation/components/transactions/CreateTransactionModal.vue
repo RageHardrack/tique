@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
 
 import type { Account } from '../../../core/entities/Account';
 import type { Category } from '../../../core/entities/Category';
@@ -226,11 +226,14 @@ const budgetAlert = computed(() => {
   });
 });
 
+const isInitializing = ref(false);
+
 // Initialize default account or prefill editing transaction
 watch(
   () => [open.value, props.transaction, props.accounts],
   ([isOpen]) => {
     if (isOpen) {
+      isInitializing.value = true;
       if (props.transaction) {
         form.type = props.transaction.type;
         form.accountId = props.transaction.accountId;
@@ -256,6 +259,9 @@ watch(
         resetForm();
       }
       errorMessage.value = null;
+      nextTick(() => {
+        isInitializing.value = false;
+      });
     }
   },
   { immediate: true },
@@ -273,9 +279,17 @@ watch(
 
 watch(
   () => [form.destinationAccountId, form.accountId, form.type],
-  ([, , currentType]) => {
+  ([, , currentType], [, , prevType]) => {
     if (currentType === 'TRANSFER' && !props.transaction) {
       calculateDestinationAmount();
+    }
+    if (!isInitializing.value && prevType && currentType !== prevType) {
+      form.categoryId = '';
+      form.taxCategory = 'NONE';
+      form.taxDeductionType = 'NONE';
+      form.taxDocumentType = 'NONE';
+      form.taxDocumentNumber = '';
+      form.taxWithholdingAmount = null;
     }
   },
 );
@@ -286,11 +300,27 @@ const filteredCategories = computed(() => {
   return props.categories.filter((cat) => cat.type === form.type);
 });
 
-// Auto-completar configuración tributaria según la categoría seleccionada (si no estamos editando)
+// Auto-completar y sincronizar configuración tributaria según la categoría seleccionada
 watch(
   () => form.categoryId,
   (newCatId) => {
-    if (!newCatId || props.transaction) return;
+    if (isInitializing.value) return;
+
+    if (!newCatId) {
+      if (form.type === 'EXPENSE') {
+        form.taxCategory = 'NONE';
+        form.taxDeductionType = 'NONE';
+        form.taxDocumentType = 'NONE';
+        form.taxDocumentNumber = '';
+      } else if (form.type === 'INCOME') {
+        form.taxCategory = 'NONE';
+        form.taxDocumentType = 'NONE';
+        form.taxDocumentNumber = '';
+        form.taxWithholdingAmount = null;
+      }
+      return;
+    }
+
     const cat = props.categories.find((c) => c.id === newCatId);
     if (!cat) return;
 
@@ -301,6 +331,11 @@ watch(
         if (form.taxDocumentType === 'NONE') {
           form.taxDocumentType = 'BOLETA';
         }
+      } else {
+        form.taxCategory = 'NONE';
+        form.taxDeductionType = 'NONE';
+        form.taxDocumentType = 'NONE';
+        form.taxDocumentNumber = '';
       }
     } else if (cat.type === 'INCOME') {
       if (cat.taxCategory && cat.taxCategory !== 'NONE') {
@@ -310,7 +345,13 @@ watch(
           calculateWithholding();
         } else if (cat.taxCategory === 'FIFTH_CATEGORY_INCOME') {
           form.taxDocumentType = 'PAYROLL_SLIP';
+          form.taxWithholdingAmount = null;
         }
+      } else {
+        form.taxCategory = 'NONE';
+        form.taxDocumentType = 'NONE';
+        form.taxDocumentNumber = '';
+        form.taxWithholdingAmount = null;
       }
     }
   },
