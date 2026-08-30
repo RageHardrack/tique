@@ -31,6 +31,7 @@ const rateStore = useExchangeRateStore();
 const txType = ref<'EXPENSE' | 'INCOME'>(props.initialType);
 const selectedAccountId = ref('');
 const selectedCategoryId = ref('');
+const categorySearch = ref('');
 const amount = ref<number | ''>('');
 const note = ref('');
 const isSubmitting = ref(false);
@@ -44,6 +45,14 @@ const filteredCategories = computed(() => {
   return categoryStore.categories.filter((c) => c.type === txType.value);
 });
 
+const displayedCategories = computed(() => {
+  if (!categorySearch.value.trim()) return filteredCategories.value;
+  const q = categorySearch.value.trim().toLowerCase();
+  return filteredCategories.value.filter((c) =>
+    c.name.toLowerCase().includes(q),
+  );
+});
+
 const activeAccountCurrency = computed(() => {
   const acc = accountStore.accounts.find((a) => a.id === selectedAccountId.value);
   return acc?.currency || rateStore.baseCurrency;
@@ -53,6 +62,7 @@ function resetForm() {
   txType.value = props.initialType || 'EXPENSE';
   selectedAccountId.value = accountStore.accounts.length > 0 ? accountStore.accounts[0].id : '';
   selectedCategoryId.value = '';
+  categorySearch.value = '';
   amount.value = '';
   note.value = '';
   errorMessage.value = null;
@@ -276,11 +286,25 @@ async function handleSubmit() {
           </div>
         </div>
 
-        <!-- Fast Category Grid -->
+        <!-- Fast Category Grid with Search -->
         <div class="space-y-1">
-          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Categoría</label>
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Categoría</label>
+            <span v-if="filteredCategories.length > 4" class="text-[10px] text-slate-400">
+              {{ displayedCategories.length }} disponibles
+            </span>
+          </div>
+          <UInput
+            v-if="filteredCategories.length > 4"
+            v-model="categorySearch"
+            placeholder="Buscar categoría..."
+            icon="i-heroicons-magnifying-glass"
+            size="xs"
+            class="w-full mb-1"
+          />
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 max-h-48 overflow-y-auto p-1 border border-slate-100 dark:border-slate-800/80 rounded-xl">
             <button
+              v-if="!categorySearch.trim()"
               type="button"
               class="px-2.5 py-2 rounded-lg text-left text-xs font-medium transition-all cursor-pointer min-h-[40px] truncate"
               :class="[
@@ -293,7 +317,7 @@ async function handleSubmit() {
               General
             </button>
             <button
-              v-for="cat in filteredCategories"
+              v-for="cat in displayedCategories"
               :key="cat.id"
               type="button"
               class="px-2.5 py-2 rounded-lg text-left text-xs font-medium transition-all cursor-pointer min-h-[40px] truncate flex items-center gap-1.5"

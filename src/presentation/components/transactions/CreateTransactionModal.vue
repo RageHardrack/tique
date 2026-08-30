@@ -9,6 +9,7 @@ import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
 import { DateFormatter } from '../../../core/services/DateFormatter';
 import { useExchangeRateStore } from '../../store/exchange-rates';
 import { useAuthStore } from '../../store/auth';
+import SearchableSelect from '../base/SearchableSelect.vue';
 
 interface Props {
   transaction?: Transaction | null;
@@ -301,12 +302,15 @@ const destinationOptions = computed(() =>
   })),
 );
 
-const categoryOptions = computed(() =>
-  filteredCategories.value.map((cat) => ({
+const categoryOptions = computed(() => [
+  { label: 'Sin categoría / General', value: '', icon: 'i-heroicons-tag' },
+  ...filteredCategories.value.map((cat) => ({
     label: cat.name,
     value: cat.id,
+    icon: cat.icon || 'i-heroicons-tag',
+    color: cat.color,
   })),
-);
+]);
 
 const taxDeductionOptions = [
   { label: 'Restaurante / Bar (15%)', value: 'RESTAURANT_BAR' },
@@ -528,12 +532,11 @@ function handleSubmit() {
 
           <div v-else class="space-y-1.5">
             <label class="text-sm font-medium text-slate-200">Categoría</label>
-            <USelect
+            <SearchableSelect
               v-model="form.categoryId"
               :items="categoryOptions"
               placeholder="Sin categoría / General"
-              value-key="value"
-              class="w-full"
+              search-placeholder="Buscar categoría..."
             />
           </div>
         </div>

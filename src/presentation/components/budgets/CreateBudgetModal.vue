@@ -5,6 +5,7 @@ import type { Budget } from '../../../core/entities/Budget';
 import type { Category } from '../../../core/entities/Category';
 import type { SupportedCurrency } from '../../../core/entities/Account';
 import { SUPPORTED_CURRENCIES } from '../../../core/services/CurrencyFormatter';
+import SearchableSelect from '../base/SearchableSelect.vue';
 
 interface Props {
   open: boolean;
@@ -56,6 +57,8 @@ const categoryOptions = computed(() =>
   expenseCategories.value.map((cat) => ({
     label: cat.name,
     value: cat.id,
+    icon: cat.icon || 'i-heroicons-tag',
+    color: cat.color,
   })),
 );
 
@@ -159,11 +162,11 @@ function handleSubmit() {
             >
               Categoría de Gasto
             </label>
-            <USelect
+            <SearchableSelect
               v-model="categoryId"
               :items="categoryOptions"
-              value-key="value"
-              class="w-full"
+              placeholder="Seleccionar categoría de gasto..."
+              search-placeholder="Buscar categoría de gasto..."
             />
           </div>
 

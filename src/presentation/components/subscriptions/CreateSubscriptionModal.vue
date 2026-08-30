@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue';
 import type { Category } from '../../../core/entities/Category';
 import type { RecurrenceFrequency, Subscription } from '../../../core/entities/Subscription';
 import { SUPPORTED_CURRENCIES } from '../../../core/services/CurrencyFormatter';
+import SearchableSelect from '../base/SearchableSelect.vue';
 import type {
   Account,
   SupportedCurrency,
@@ -76,12 +77,15 @@ const accountOptions = computed(() =>
   })),
 );
 
-const categoryOptions = computed(() =>
-  expenseCategories.value.map((cat) => ({
+const categoryOptions = computed(() => [
+  { label: 'Sin categoría (Opcional)', value: '', icon: 'i-heroicons-tag' },
+  ...expenseCategories.value.map((cat) => ({
     label: cat.name,
     value: cat.id,
+    icon: cat.icon || 'i-heroicons-tag',
+    color: cat.color,
   })),
-);
+]);
 
 const currencyOptions = computed(() =>
   SUPPORTED_CURRENCIES.map((c) => ({
@@ -265,12 +269,11 @@ function handleSubmit() {
               >
                 Categoría (Opcional)
               </label>
-              <USelect
+              <SearchableSelect
                 v-model="categoryId"
                 :items="categoryOptions"
                 placeholder="Sin categoría (Opcional)"
-                value-key="value"
-                class="w-full"
+                search-placeholder="Buscar categoría..."
               />
             </div>
           </div>
