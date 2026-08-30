@@ -7,6 +7,11 @@ import {
   type SupportedCurrency,
 } from '../../../core/services/CurrencyFormatter';
 
+import {
+  InstallmentCalculatorService,
+  type InstallmentFrequency,
+} from '../../../core/services/InstallmentCalculatorService';
+
 interface Props {
   loan?: Loan | null;
   accounts?: Account[];
@@ -32,6 +37,10 @@ const emit = defineEmits<{
       dueDate?: string;
       notes?: string;
       initialAccountId?: string;
+      installmentsCount?: number;
+      installmentFrequency?: string;
+      interestRateMonthlyPercent?: number;
+      installments?: any[];
     },
   ): void;
   (
@@ -43,6 +52,9 @@ const emit = defineEmits<{
       currency: string;
       dueDate?: string;
       notes?: string;
+      installmentsCount?: number;
+      installmentFrequency?: string;
+      interestRateMonthlyPercent?: number;
     },
   ): void;
 }>();
@@ -55,6 +67,11 @@ const form = reactive({
   dueDate: '',
   notes: '',
   initialAccountId: '',
+  isInstallmentPlan: false,
+  installmentsCount: 3,
+  installmentFrequency: 'BIWEEKLY_14_DAYS' as InstallmentFrequency,
+  interestRateMonthlyPercent: 0,
+  initialDownPayment: undefined as number | undefined,
 });
 
 const isSubmitting = ref(false);
@@ -74,6 +91,23 @@ const accountOptions = computed(() =>
   })),
 );
 
+const frequencyOptions = [
+  { label: 'Cada 14 días (Esquema Cashea / Quincenal)', value: 'BIWEEKLY_14_DAYS' },
+  { label: 'Cada 7 días (Semanal)', value: 'WEEKLY_7_DAYS' },
+  { label: 'Mensual (Cada 30 días)', value: 'MONTHLY' },
+];
+
+const calculatedPlan = computed(() => {
+  if (!form.isInstallmentPlan || !form.amount || Number(form.amount) <= 0) return null;
+  return InstallmentCalculatorService.generateSchedule({
+    totalAmount: Number(form.amount),
+    installmentsCount: form.installmentsCount || 3,
+    frequency: form.installmentFrequency,
+    interestRateMonthlyPercent: form.interestRateMonthlyPercent || 0,
+    initialDownPayment: form.initialDownPayment,
+  });
+});
+
 function resetForm() {
   form.personName = '';
   form.type = 'LENT';
@@ -82,6 +116,11 @@ function resetForm() {
   form.dueDate = '';
   form.notes = '';
   form.initialAccountId = '';
+  form.isInstallmentPlan = false;
+  form.installmentsCount = 3;
+  form.installmentFrequency = 'BIWEEKLY_14_DAYS';
+  form.interestRateMonthlyPercent = 0;
+  form.initialDownPayment = undefined;
   errorMessage.value = null;
 }
 
@@ -97,6 +136,10 @@ watch(
         form.dueDate = props.loan.dueDate ? props.loan.dueDate.split('T')[0] : '';
         form.notes = props.loan.notes || '';
         form.initialAccountId = '';
+        form.isInstallmentPlan = !!props.loan.installmentsCount;
+        form.installmentsCount = props.loan.installmentsCount || 3;
+        form.installmentFrequency = (props.loan.installmentFrequency as InstallmentFrequency) || 'BIWEEKLY_14_DAYS';
+        form.interestRateMonthlyPercent = props.loan.interestRateMonthlyPercent || 0;
       } else {
         resetForm();
       }
@@ -124,13 +167,23 @@ function handleSubmit() {
   errorMessage.value = null;
 
   try {
+    const plan = form.isInstallmentPlan ? calculatedPlan.value : null;
+    const notePlanSuffix = form.isInstallmentPlan
+      ? `(${form.installmentsCount} cuotas ${form.installmentFrequency === 'BIWEEKLY_14_DAYS' ? 'Cashea 14d' : 'Mensual'})`
+      : '';
+    const finalNotes =
+      [form.notes.trim(), notePlanSuffix].filter(Boolean).join(' - ') || undefined;
+
     if (props.loan) {
       emit('updated', props.loan.id, {
         personName: form.personName.trim(),
         amount: numericAmount,
         currency: form.currency,
         dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : undefined,
-        notes: form.notes.trim() || undefined,
+        notes: finalNotes,
+        installmentsCount: form.isInstallmentPlan ? form.installmentsCount : undefined,
+        installmentFrequency: form.isInstallmentPlan ? form.installmentFrequency : undefined,
+        interestRateMonthlyPercent: form.isInstallmentPlan ? form.interestRateMonthlyPercent : undefined,
       });
     } else {
       emit('created', {
@@ -139,8 +192,12 @@ function handleSubmit() {
         amount: numericAmount,
         currency: form.currency,
         dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : undefined,
-        notes: form.notes.trim() || undefined,
+        notes: finalNotes,
         initialAccountId: form.initialAccountId || undefined,
+        installmentsCount: form.isInstallmentPlan ? form.installmentsCount : undefined,
+        installmentFrequency: form.isInstallmentPlan ? form.installmentFrequency : undefined,
+        interestRateMonthlyPercent: form.isInstallmentPlan ? form.interestRateMonthlyPercent : undefined,
+        installments: plan ? plan.schedule : undefined,
       });
     }
     open.value = false;
@@ -272,6 +329,92 @@ function handleSubmit() {
           <p class="text-[11px] text-slate-400">
             {{ form.type === 'LENT' ? 'Descontará el monto del saldo de la cuenta elegida.' : 'Sumará el monto al saldo de la cuenta elegida.' }}
           </p>
+        </div>
+
+        <!-- Esquema a Cuotas / Financiado (Cashea / Créditos) -->
+        <div class="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/30 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <UIcon name="i-heroicons-calendar-days" class="w-4 h-4 text-blue-500" />
+              <label class="text-xs font-bold text-blue-500 uppercase tracking-wider cursor-pointer" for="installmentToggle">
+                Plan a Cuotas / Crédito Flex (Cashea)
+              </label>
+            </div>
+            <input
+              id="installmentToggle"
+              v-model="form.isInstallmentPlan"
+              type="checkbox"
+              class="w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+            />
+          </div>
+
+          <div v-if="form.isInstallmentPlan" class="space-y-3 pt-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="text-xs font-medium text-slate-300">Número de Cuotas</label>
+                <UInput
+                  v-model.number="form.installmentsCount"
+                  type="number"
+                  min="2"
+                  max="48"
+                  placeholder="3"
+                  class="w-full"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-xs font-medium text-slate-300">Frecuencia de Pago</label>
+                <USelect
+                  v-model="form.installmentFrequency"
+                  :items="frequencyOptions"
+                  value-key="value"
+                  class="w-full"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-xs font-medium text-slate-300">Inicial Pagada Hoy (Opcional)</label>
+                <UInput
+                  v-model.number="form.initialDownPayment"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  class="w-full"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-xs font-medium text-slate-300">Tasa Interés Mensual (%)</label>
+                <UInput
+                  v-model.number="form.interestRateMonthlyPercent"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  placeholder="0 (Sin interés)"
+                  class="w-full"
+                />
+              </div>
+            </div>
+
+            <!-- Schedule Preview -->
+            <div v-if="calculatedPlan" class="p-2.5 rounded-lg bg-slate-900/60 border border-blue-500/20 space-y-2">
+              <div class="flex items-center justify-between text-[11px] font-bold text-slate-300">
+                <span>Cronograma Estimado ({{ calculatedPlan.schedule.length }} cuotas)</span>
+                <span class="text-blue-400">Total a pagar: {{ form.currency }} {{ calculatedPlan.totalToPay }}</span>
+              </div>
+              <div class="max-h-36 overflow-y-auto space-y-1 text-[11px]">
+                <div
+                  v-for="item in calculatedPlan.schedule"
+                  :key="item.installmentNumber"
+                  class="flex items-center justify-between p-1.5 rounded bg-slate-800/40 text-slate-300"
+                >
+                  <span class="font-medium">Cuota #{{ item.installmentNumber }} ({{ item.dueDate }})</span>
+                  <span class="font-bold text-white">{{ form.currency }} {{ item.amount }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Notas / Comentarios -->

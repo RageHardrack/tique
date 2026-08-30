@@ -57,12 +57,16 @@ function format(amount: number, currency?: string) {
 }
 
 watch(
-  () => [open.value, props.loan],
+  () => [open.value, props.loan, props.accounts],
   ([isOpenVal]) => {
     if (isOpenVal && props.loan) {
       form.amount = props.loan.remainingAmount || 0;
       form.date = new Date().toISOString().split('T')[0];
-      form.accountId = '';
+      const matchAcc = (props.accounts || []).find(
+        (a) => a.currency === props.loan?.currency,
+      );
+      form.accountId =
+        matchAcc?.id || (props.accounts && props.accounts.length > 0 ? props.accounts[0].id : '');
       form.notes = '';
       errorMessage.value = null;
     }
@@ -84,6 +88,10 @@ function handleSubmit() {
     errorMessage.value = `El abono no puede superar el saldo pendiente (${format(props.loan.remainingAmount, props.loan.currency)}).`;
     return;
   }
+  if (!form.accountId) {
+    errorMessage.value = 'Debes seleccionar una cuenta bancaria o billetera para procesar el abono.';
+    return;
+  }
 
   isSubmitting.value = true;
   errorMessage.value = null;
@@ -92,7 +100,7 @@ function handleSubmit() {
     emit('paymentAdded', props.loan.id, {
       amount: Number(form.amount),
       date: form.date ? new Date(form.date).toISOString() : undefined,
-      accountId: form.accountId || undefined,
+      accountId: form.accountId,
       notes: form.notes.trim() || undefined,
     });
     open.value = false;
@@ -176,17 +184,18 @@ function handleSubmit() {
           />
         </div>
 
-        <!-- Cuenta Bancaria para Conciliar (Opcional) -->
+        <!-- Cuenta Bancaria para Conciliar (Requerida) -->
         <div v-if="accounts && accounts.length > 0" class="space-y-1">
           <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
-            Depositar / Descontar de Cuenta Bancaria (Opcional)
+            {{ loan?.type === 'LENT' ? 'Cuenta de Depósito' : 'Cuenta de Pago / Débito' }} <span class="text-red-400">*</span>
           </label>
           <USelect
             v-model="form.accountId"
             :items="accountOptions"
-            placeholder="No impactar cuenta bancaria"
+            placeholder="Seleccionar cuenta..."
             value-key="value"
             class="w-full"
+            required
           />
           <p class="text-[11px] text-slate-400">
             {{ loan?.type === 'LENT' ? 'Sumará el abono al saldo de tu cuenta.' : 'Descontará el abono del saldo de tu cuenta.' }}

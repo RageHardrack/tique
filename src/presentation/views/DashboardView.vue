@@ -10,6 +10,7 @@ import { useAccountStore } from '../store/accounts';
 import { useCategoryStore } from '../store/categories';
 import { useTransactionStore } from '../store/transactions';
 import { useSubscriptionStore } from '../store/subscriptions';
+import { useLoanStore } from '../store/loan.store';
 import { useExchangeRateStore } from '../store/exchange-rates';
 import type { TransactionType } from '../../core/entities/Transaction';
 import { AnalyticsService } from '../../core/services/AnalyticsService';
@@ -28,6 +29,7 @@ const budgetStore = useBudgetStore();
 const subscriptionStore = useSubscriptionStore();
 const categoryStore = useCategoryStore();
 const transactionStore = useTransactionStore();
+const loanStore = useLoanStore();
 const rateStore = useExchangeRateStore();
 const { confirm: confirmDialog } = useConfirm();
 
@@ -39,6 +41,7 @@ onMounted(async () => {
       budgetStore.fetchBudgets(authStore.user.id),
       subscriptionStore.fetchSubscriptions(authStore.user.id),
       transactionStore.fetchTransactions(authStore.user.id),
+      loanStore.fetchLoans(authStore.user.id),
     ]);
   }
 });
@@ -67,16 +70,79 @@ const categoriesMap = computed(() => {
   return map;
 });
 
-// Patrimony Converted
-const totalPatrimonyConverted = computed(() => {
-  return accountStore.accounts.reduce((sum, acc) => {
-    return sum + rateStore.convert(acc.balance || 0, acc.currency || 'USD');
-  }, 0);
+// Total Assets (Checking, Savings, Cash, Wallet, Investment, and Pending Lent Loans)
+const totalAssetsConverted = computed(() => {
+  const accountsAssets = accountStore.accounts
+    .filter((acc) => acc.type !== 'CREDIT_CARD')
+    .reduce((sum, acc) => {
+      return sum + Math.max(0, rateStore.convert(acc.balance || 0, acc.currency || 'USD'));
+    }, 0);
+
+  const lentLoansAssets = loanStore.loans
+    .filter((l) => l.type === 'LENT' && l.status !== 'PAID')
+    .reduce((sum, l) => {
+      return sum + Math.max(0, rateStore.convert(l.remainingAmount || 0, l.currency || 'USD'));
+    }, 0);
+
+  return Math.round((accountsAssets + lentLoansAssets) * 100) / 100;
 });
 
-const formattedTotalPatrimony = computed(() => {
+// Total Liabilities (Credit Card Consumed Debt + Pending Borrowed Debts)
+const totalLiabilitiesConverted = computed(() => {
+  const creditCardDebt = accountStore.accounts
+    .filter((acc) => acc.type === 'CREDIT_CARD')
+    .reduce((sum, acc) => {
+      return sum + Math.max(0, rateStore.convert(acc.balance || 0, acc.currency || 'USD'));
+    }, 0);
+
+  const borrowedDebt = loanStore.loans
+    .filter((l) => l.type === 'BORROWED' && l.status !== 'PAID')
+    .reduce((sum, l) => {
+      return sum + Math.max(0, rateStore.convert(l.remainingAmount || 0, l.currency || 'USD'));
+    }, 0);
+
+  return Math.round((creditCardDebt + borrowedDebt) * 100) / 100;
+});
+
+// Real Net Worth (Total Assets - Total Liabilities)
+const totalNetWorthConverted = computed(() => {
+  return Math.round((totalAssetsConverted.value - totalLiabilitiesConverted.value) * 100) / 100;
+});
+
+// Credit Card Available Liquidity
+const totalCreditCardAvailableConverted = computed(() => {
+  return accountStore.accounts
+    .filter((acc) => acc.type === 'CREDIT_CARD')
+    .reduce((sum, acc) => {
+      const avail = Math.max(0, (acc.creditLimit || 1000) - (acc.balance || 0));
+      return sum + rateStore.convert(avail, acc.currency || 'USD');
+    }, 0);
+});
+
+const formattedTotalNetWorth = computed(() => {
   return CurrencyFormatter.format(
-    totalPatrimonyConverted.value,
+    totalNetWorthConverted.value,
+    rateStore.baseCurrency,
+  );
+});
+
+const formattedTotalAssets = computed(() => {
+  return CurrencyFormatter.format(
+    totalAssetsConverted.value,
+    rateStore.baseCurrency,
+  );
+});
+
+const formattedTotalLiabilities = computed(() => {
+  return CurrencyFormatter.format(
+    totalLiabilitiesConverted.value,
+    rateStore.baseCurrency,
+  );
+});
+
+const formattedTotalCreditCardAvailable = computed(() => {
+  return CurrencyFormatter.format(
+    totalCreditCardAvailableConverted.value,
     rateStore.baseCurrency,
   );
 });
@@ -263,7 +329,7 @@ async function handlePaySubscription(subscriptionId: string) {
 
       <!-- Top Metrics Row -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <!-- Total Patrimony -->
+        <!-- Total Net Worth / Patrimonio Total -->
         <div
           class="rounded-3xl border border-slate-200 dark:border-[#283a59] bg-white dark:bg-[#162032]/95 p-6 shadow-sm flex flex-col justify-between"
         >
@@ -279,15 +345,29 @@ async function handlePaySubscription(subscriptionId: string) {
               <UIcon name="i-heroicons-banknotes" class="h-5 w-5" />
             </div>
           </div>
-          <div class="mt-4">
+          <div class="mt-3 min-w-0 space-y-2">
             <h3
-              class="text-3xl font-black text-slate-900 dark:text-[#FAF7F2] tracking-tight"
+              class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-[#FAF7F2] tracking-tight truncate"
+              :title="formattedTotalNetWorth"
             >
-              {{ formattedTotalPatrimony }}
+              {{ formattedTotalNetWorth }}
             </h3>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              {{ accountStore.accounts.length }} cuentas activas
-            </p>
+            <!-- Assets vs Liabilities breakdown -->
+            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] font-medium">
+              <span class="text-emerald-600 dark:text-emerald-400 truncate" :title="'Activos: ' + formattedTotalAssets">
+                Activos: {{ formattedTotalAssets }}
+              </span>
+              <span class="text-rose-600 dark:text-rose-400 truncate" :title="'Deudas / Tarjetas: ' + formattedTotalLiabilities">
+                Deudas: {{ formattedTotalLiabilities }}
+              </span>
+            </div>
+            <div
+              v-if="totalCreditCardAvailableConverted > 0"
+              class="text-[10px] text-slate-400 dark:text-slate-500 font-medium flex items-center gap-1"
+            >
+              <UIcon name="i-heroicons-credit-card" class="w-3 h-3 text-amber-500" />
+              <span>Línea disp. en tarjetas: {{ formattedTotalCreditCardAvailable }}</span>
+            </div>
           </div>
         </div>
 
@@ -307,9 +387,10 @@ async function handlePaySubscription(subscriptionId: string) {
               <UIcon name="i-heroicons-arrow-trending-up" class="h-5 w-5" />
             </div>
           </div>
-          <div class="mt-4">
+          <div class="mt-4 min-w-0">
             <h3
-              class="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight"
+              class="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight truncate"
+              :title="formattedTotalIncome"
             >
               {{ formattedTotalIncome }}
             </h3>
@@ -335,9 +416,10 @@ async function handlePaySubscription(subscriptionId: string) {
               <UIcon name="i-heroicons-arrow-trending-down" class="h-5 w-5" />
             </div>
           </div>
-          <div class="mt-4">
+          <div class="mt-4 min-w-0">
             <h3
-              class="text-3xl font-black text-rose-600 dark:text-rose-400 tracking-tight"
+              class="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400 tracking-tight truncate"
+              :title="formattedTotalExpenses"
             >
               {{ formattedTotalExpenses }}
             </h3>

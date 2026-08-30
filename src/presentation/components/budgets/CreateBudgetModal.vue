@@ -48,6 +48,7 @@ const amount = ref<number | undefined>(undefined);
 const currency = ref(props.baseCurrency);
 const period = ref('MONTHLY');
 const errorMessage = ref('');
+const isSubmitting = ref(false);
 
 const expenseCategories = computed(() => {
   return props.categories.filter((c) => c.type === 'EXPENSE');
@@ -101,22 +102,30 @@ function handleSubmit() {
     return;
   }
 
-  if (props.budget?.id) {
-    emit('update', props.budget.id, {
-      amount: Number(amount.value),
-      currency: currency.value,
-      period: period.value,
-    });
-  } else {
-    emit('create', {
-      categoryId: categoryId.value,
-      amount: Number(amount.value),
-      currency: currency.value,
-      period: period.value,
-    });
-  }
+  isSubmitting.value = true;
+  errorMessage.value = '';
 
-  isOpen.value = false;
+  try {
+    if (props.budget?.id) {
+      emit('update', props.budget.id, {
+        amount: Number(amount.value),
+        currency: currency.value,
+        period: period.value,
+      });
+    } else {
+      emit('create', {
+        categoryId: categoryId.value,
+        amount: Number(amount.value),
+        currency: currency.value,
+        period: period.value,
+      });
+    }
+    isOpen.value = false;
+  } catch (err: any) {
+    errorMessage.value = err.message || 'Error al guardar el presupuesto.';
+  } finally {
+    isSubmitting.value = false;
+  }
 }
 </script>
 
@@ -212,10 +221,10 @@ function handleSubmit() {
           <div
             class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-[#283a59]/60"
           >
-            <UButton color="neutral" variant="ghost" @click="isOpen = false">
+            <UButton color="neutral" variant="ghost" :disabled="isSubmitting" @click="isOpen = false">
               Cancelar
             </UButton>
-            <UButton type="submit" color="primary" icon="i-heroicons-check">
+            <UButton type="submit" color="primary" icon="i-heroicons-check" :loading="isSubmitting">
               Guardar Presupuesto
             </UButton>
           </div>

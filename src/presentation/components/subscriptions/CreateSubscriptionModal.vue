@@ -65,6 +65,7 @@ const frequency = ref<RecurrenceFrequency>('MONTHLY');
 const customIntervalDays = ref<number | undefined>(undefined);
 const nextDueDate = ref('');
 const errorMessage = ref('');
+const isSubmitting = ref(false);
 
 const expenseCategories = computed(() => {
   return props.categories.filter((c) => c.type === 'EXPENSE');
@@ -168,31 +169,38 @@ function handleSubmit() {
       ? Number(customIntervalDays.value)
       : null;
 
-  if (props.subscription?.id) {
-    emit('update', props.subscription.id, {
-      name: name.value.trim(),
-      accountId: accountId.value,
-      categoryId: categoryId.value || null,
-      amount: Number(amount.value),
-      currency: currency.value,
-      frequency: frequency.value,
-      customIntervalDays: payloadCustomInterval,
-      nextDueDate: new Date(nextDueDate.value).toISOString(),
-    });
-  } else {
-    emit('create', {
-      name: name.value.trim(),
-      accountId: accountId.value,
-      categoryId: categoryId.value || undefined,
-      amount: Number(amount.value),
-      currency: currency.value,
-      frequency: frequency.value,
-      customIntervalDays: payloadCustomInterval,
-      nextDueDate: new Date(nextDueDate.value).toISOString(),
-    });
-  }
+  isSubmitting.value = true;
+  try {
+    if (props.subscription?.id) {
+      emit('update', props.subscription.id, {
+        name: name.value.trim(),
+        accountId: accountId.value,
+        categoryId: categoryId.value || undefined,
+        amount: Number(amount.value),
+        currency: currency.value,
+        frequency: frequency.value,
+        customIntervalDays: payloadCustomInterval,
+        nextDueDate: nextDueDate.value,
+      });
+    } else {
+      emit('create', {
+        name: name.value.trim(),
+        accountId: accountId.value,
+        categoryId: categoryId.value || undefined,
+        amount: Number(amount.value),
+        currency: currency.value,
+        frequency: frequency.value,
+        customIntervalDays: payloadCustomInterval,
+        nextDueDate: nextDueDate.value,
+      });
+    }
 
-  isOpen.value = false;
+    isOpen.value = false;
+  } catch (err: any) {
+    errorMessage.value = err.message || 'Error al guardar la suscripción.';
+  } finally {
+    isSubmitting.value = false;
+  }
 }
 </script>
 
@@ -371,10 +379,10 @@ function handleSubmit() {
           <div
             class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-[#283a59]/60"
           >
-            <UButton color="neutral" variant="ghost" @click="isOpen = false">
+            <UButton color="neutral" variant="ghost" :disabled="isSubmitting" @click="isOpen = false">
               Cancelar
             </UButton>
-            <UButton type="submit" color="primary" icon="i-heroicons-check">
+            <UButton type="submit" color="primary" icon="i-heroicons-check" :loading="isSubmitting">
               Guardar Suscripción
             </UButton>
           </div>

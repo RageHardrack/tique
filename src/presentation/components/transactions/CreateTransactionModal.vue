@@ -9,6 +9,10 @@ import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
 import { DateFormatter } from '../../../core/services/DateFormatter';
 import { useExchangeRateStore } from '../../store/exchange-rates';
 import { useAuthStore } from '../../store/auth';
+import { useBudgetStore } from '../../store/budgets';
+import { useTransactionStore } from '../../store/transactions';
+import { CategorySuggestionService } from '../../../core/services/CategorySuggestionService';
+import { BudgetAlertService } from '../../../core/services/BudgetAlertService';
 import SearchableSelect from '../base/SearchableSelect.vue';
 
 interface Props {
@@ -21,6 +25,8 @@ const props = defineProps<Props>();
 
 const rateStore = useExchangeRateStore();
 const authStore = useAuthStore();
+const budgetStore = useBudgetStore();
+const transactionStore = useTransactionStore();
 
 const open = defineModel<boolean>('open', { default: false });
 
@@ -192,6 +198,33 @@ function toggleDeductible(val: boolean | string | 'indeterminate') {
     form.taxDocumentNumber = '';
   }
 }
+
+// Category AI / Keyword Suggestion
+const categorySuggestion = computed(() => {
+  if (props.transaction || form.categoryId || !form.note.trim()) return null;
+  return CategorySuggestionService.suggestCategory({
+    description: form.note,
+    categories: props.categories,
+    recentTransactions: transactionStore.transactions,
+  });
+});
+
+function applyCategorySuggestion(catId: string) {
+  form.categoryId = catId;
+}
+
+// Real-time Budget Overspending Alert
+const budgetAlert = computed(() => {
+  if (form.type !== 'EXPENSE' || !form.categoryId || !form.amount || Number(form.amount) <= 0) {
+    return null;
+  }
+  return BudgetAlertService.checkBudgetThreshold({
+    categoryId: form.categoryId,
+    transactionAmount: Number(form.amount),
+    budgets: budgetStore.budgets,
+    monthlyTransactions: transactionStore.transactions,
+  });
+});
 
 // Initialize default account or prefill editing transaction
 watch(
@@ -538,6 +571,22 @@ function handleSubmit() {
               placeholder="Sin categoría / General"
               search-placeholder="Buscar categoría..."
             />
+
+            <!-- Category Suggestion Pill -->
+            <div
+              v-if="categorySuggestion"
+              class="flex items-center gap-1.5 pt-1 text-xs text-blue-400"
+            >
+              <UIcon name="i-heroicons-sparkles" class="w-3.5 h-3.5" />
+              <span>Sugerencia:</span>
+              <button
+                type="button"
+                class="px-2 py-0.5 rounded-full bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 font-bold border border-blue-500/30 cursor-pointer transition-all text-[11px]"
+                @click="applyCategorySuggestion(categorySuggestion.categoryId)"
+              >
+                {{ categorySuggestion.categoryName }} (Aplicar)
+              </button>
+            </div>
           </div>
         </div>
 
@@ -652,6 +701,37 @@ function handleSubmit() {
             autofocus
             @input="handleAmountInput"
           />
+
+          <!-- Real-Time Budget Overspending Warning -->
+          <div
+            v-if="budgetAlert && budgetAlert.hasAlert"
+            class="p-2.5 rounded-xl border flex items-start gap-2.5 text-xs font-semibold"
+            :class="[
+              budgetAlert.level === 'EXCEEDED_100'
+                ? 'bg-rose-500/10 border-rose-500/40 text-rose-300'
+                : 'bg-amber-500/10 border-amber-500/40 text-amber-300',
+            ]"
+          >
+            <UIcon
+              :name="
+                budgetAlert.level === 'EXCEEDED_100'
+                  ? 'i-heroicons-exclamation-circle'
+                  : 'i-heroicons-exclamation-triangle'
+              "
+              class="w-4 h-4 mt-0.5 shrink-0"
+              :class="
+                budgetAlert.level === 'EXCEEDED_100'
+                  ? 'text-rose-400'
+                  : 'text-amber-400'
+              "
+            />
+            <div class="space-y-0.5">
+              <p class="font-bold">{{ budgetAlert.message }}</p>
+              <p class="text-[10px] opacity-80">
+                Presupuesto {{ budgetAlert.budgetName }}: {{ budgetAlert.currentSpent }} gastados + {{ form.amount }} nuevo = {{ budgetAlert.newSpent }} / {{ budgetAlert.categoryLimit }}
+              </p>
+            </div>
+          </div>
         </div>
 
         <!-- Date and Note -->

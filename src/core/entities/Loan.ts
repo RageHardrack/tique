@@ -22,6 +22,19 @@ export interface Loan {
   dueDate?: string | null;
   status: LoanStatus;
   notes?: string | null;
+  installmentsCount?: number | null;
+  installmentFrequency?: string | null;
+  interestRateMonthlyPercent?: number | null;
+  installments?: {
+    installmentNumber: number;
+    dueDate: string;
+    amount: number;
+    principalAmount: number;
+    interestAmount: number;
+    status: 'PENDIENTE' | 'PAGADA' | 'VENCIDA';
+    paidDate?: string | null;
+    paidAccountId?: string | null;
+  }[] | null;
   createdAt: string;
   updatedAt: string;
   payments?: LoanPayment[];

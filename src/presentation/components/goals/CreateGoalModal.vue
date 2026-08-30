@@ -34,6 +34,7 @@ const form = reactive({
 });
 
 const errorMessage = ref<string | null>(null);
+const isSubmitting = ref(false);
 
 const colorOptions = [
   '#10B981', // Emerald
@@ -107,29 +108,37 @@ function handleSubmit() {
     return;
   }
 
-  if (isEditing.value && props.goal) {
-    emit('updated', props.goal.id, {
-      name: form.name.trim(),
-      targetAmount: Number(form.targetAmount),
-      currentAmount: Number(form.currentAmount),
-      currency: form.currency,
-      targetDate: form.targetDate ? form.targetDate : null,
-      color: form.color,
-      icon: form.icon,
-    });
-  } else {
-    emit('created', {
-      name: form.name.trim(),
-      targetAmount: Number(form.targetAmount),
-      currentAmount: Number(form.currentAmount),
-      currency: form.currency,
-      targetDate: form.targetDate ? form.targetDate : null,
-      color: form.color,
-      icon: form.icon,
-    });
-  }
+  isSubmitting.value = true;
+  errorMessage.value = null;
 
-  handleClose();
+  try {
+    if (isEditing.value && props.goal) {
+      emit('updated', props.goal.id, {
+        name: form.name.trim(),
+        targetAmount: Number(form.targetAmount),
+        currentAmount: Number(form.currentAmount),
+        currency: form.currency,
+        targetDate: form.targetDate ? form.targetDate : null,
+        color: form.color,
+        icon: form.icon,
+      });
+    } else {
+      emit('created', {
+        name: form.name.trim(),
+        targetAmount: Number(form.targetAmount),
+        currentAmount: Number(form.currentAmount),
+        currency: form.currency,
+        targetDate: form.targetDate ? form.targetDate : null,
+        color: form.color,
+        icon: form.icon,
+      });
+    }
+    handleClose();
+  } catch (err: any) {
+    errorMessage.value = err.message || 'Error al guardar la meta.';
+  } finally {
+    isSubmitting.value = false;
+  }
 }
 </script>
 
@@ -233,10 +242,10 @@ function handleSubmit() {
           </div>
 
           <div class="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
-            <UButton color="neutral" variant="ghost" @click="handleClose">
+            <UButton color="neutral" variant="ghost" :disabled="isSubmitting" @click="handleClose">
               Cancelar
             </UButton>
-            <UButton color="primary" type="submit">
+            <UButton color="primary" type="submit" :loading="isSubmitting">
               {{ isEditing ? 'Guardar Cambios' : 'Crear Meta' }}
             </UButton>
           </div>

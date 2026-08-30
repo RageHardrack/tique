@@ -15,6 +15,10 @@ export interface Account {
   type: AccountType;
   balance: number;
   currency: string;
+  creditLimit?: number | null;
+  statementClosingDay?: number | null;
+  paymentDueDay?: number | null;
+  monthlyInterestRate?: number | null;
   createdAt: string;
   updatedAt: string;
 }

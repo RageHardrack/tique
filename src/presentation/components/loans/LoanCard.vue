@@ -77,6 +77,14 @@ function formatDate(dateStr?: string | null) {
           </span>
 
           <span
+            v-if="loan.installmentsCount || (loan.notes && loan.notes.includes('cuotas'))"
+            class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-700 dark:text-blue-300 flex items-center gap-1"
+          >
+            <UIcon name="i-heroicons-calendar-days" class="w-3 h-3" />
+            {{ loan.installmentsCount ? loan.installmentsCount + ' cuotas' : 'Plan a Cuotas' }}
+          </span>
+
+          <span
             v-if="isFullyPaid"
             class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
           >
