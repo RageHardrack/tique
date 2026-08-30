@@ -6,7 +6,7 @@ import AppLayout from '../layouts/AppLayout.vue';
 import { useCategoryStore } from '../store/categories';
 import { useTransactionStore } from '../store/transactions';
 import { useTaxStore } from '../store/tax.store';
-import type { Category, CategoryType } from '../../core/entities/Category';
+import type { BudgetGroup, Category, CategoryType } from '../../core/entities/Category';
 import type { TaxCategory, TaxDeductionType } from '../../core/entities/Tax';
 import { useConfirm } from '../composables/useConfirm';
 import CreateCategoryModal from '../components/categories/CreateCategoryModal.vue';
@@ -79,6 +79,7 @@ async function handleCreate(payload: {
   parentId?: string;
   taxCategory?: TaxCategory;
   taxDeductionType?: TaxDeductionType;
+  budgetGroup?: BudgetGroup;
 }) {
   if (!authStore.user?.id) return;
   await categoryStore.createCategory({
@@ -97,6 +98,7 @@ async function handleUpdate(
     parentId?: string;
     taxCategory?: TaxCategory;
     taxDeductionType?: TaxDeductionType;
+    budgetGroup?: BudgetGroup;
   },
 ) {
   await categoryStore.updateCategory(id, payload);
@@ -284,6 +286,27 @@ async function handleDelete(id: string) {
               >
                 {{ cat.type === 'INCOME' ? 'Ingreso' : 'Gasto' }}
               </UBadge>
+
+              <!-- Etiqueta Regla 50/30/20 -->
+              <span
+                v-if="cat.budgetGroup && cat.budgetGroup !== 'UNASSIGNED'"
+                class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border"
+                :class="[
+                  cat.budgetGroup === 'NEEDS'
+                    ? 'text-sky-400 bg-sky-950/60 border-sky-800/40'
+                    : cat.budgetGroup === 'WANTS'
+                      ? 'text-purple-400 bg-purple-950/60 border-purple-800/40'
+                      : 'text-emerald-400 bg-emerald-950/60 border-emerald-800/40',
+                ]"
+              >
+                {{
+                  cat.budgetGroup === 'NEEDS'
+                    ? '50% Necesidades'
+                    : cat.budgetGroup === 'WANTS'
+                      ? '30% Deseos'
+                      : '20% Ahorro'
+                }}
+              </span>
 
               <!-- Etiqueta SUNAT si tiene regla asociada -->
               <span

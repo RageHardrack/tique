@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 
 import { ApiClient } from '../../infrastructure/api/api-client';
-import type { Category, CategoryType } from '../../core/entities/Category';
+import type { BudgetGroup, Category, CategoryType } from '../../core/entities/Category';
 import type { TaxCategory, TaxDeductionType } from '../../core/entities/Tax';
 
 export interface CreateCategoryInput {
@@ -15,6 +15,7 @@ export interface CreateCategoryInput {
   parentId?: string;
   taxCategory?: TaxCategory;
   taxDeductionType?: TaxDeductionType;
+  budgetGroup?: BudgetGroup;
 }
 
 export const useCategoryStore = defineStore('categories', () => {

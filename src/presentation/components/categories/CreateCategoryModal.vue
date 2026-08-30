@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue';
 
-import type { Category, CategoryType } from '../../../core/entities/Category';
+import type { BudgetGroup, Category, CategoryType } from '../../../core/entities/Category';
 import type { TaxCategory, TaxDeductionType } from '../../../core/entities/Tax';
 import { useTaxStore } from '../../store/tax.store';
 import { useAuthStore } from '../../store/auth';
@@ -27,6 +27,7 @@ const emit = defineEmits<{
       color: string;
       taxCategory?: TaxCategory;
       taxDeductionType?: TaxDeductionType;
+      budgetGroup?: BudgetGroup;
     },
   ): void;
   (
@@ -39,6 +40,7 @@ const emit = defineEmits<{
       color: string;
       taxCategory?: TaxCategory;
       taxDeductionType?: TaxDeductionType;
+      budgetGroup?: BudgetGroup;
     },
   ): void;
 }>();
@@ -71,6 +73,13 @@ const iconPresets = [
   { icon: 'i-heroicons-gift', label: 'Regalos' },
 ];
 
+const budgetGroupOptions = [
+  { label: '50% Necesidad / Gasto Fijo (Needs)', value: 'NEEDS' },
+  { label: '30% Deseo / Estilo de Vida (Wants)', value: 'WANTS' },
+  { label: '20% Ahorro / Inversión (Savings)', value: 'SAVINGS' },
+  { label: 'Sin clasificar en la regla 50/30/20', value: 'UNASSIGNED' },
+];
+
 const taxDeductionOptions = [
   { label: 'Sin deducción tributaria (Normal)', value: 'NONE' },
   { label: 'Restaurante / Bar (15% deducible)', value: 'RESTAURANT_BAR' },
@@ -93,6 +102,7 @@ const form = reactive<{
   color: string;
   taxCategory: TaxCategory;
   taxDeductionType: TaxDeductionType;
+  budgetGroup: BudgetGroup;
 }>({
   name: '',
   type: 'EXPENSE',
@@ -100,6 +110,7 @@ const form = reactive<{
   color: '#3b82f6',
   taxCategory: 'NONE',
   taxDeductionType: 'NONE',
+  budgetGroup: 'UNASSIGNED',
 });
 
 const isSubmitting = ref(false);
@@ -120,6 +131,7 @@ function resetForm() {
   form.color = '#3b82f6';
   form.taxCategory = 'NONE';
   form.taxDeductionType = 'NONE';
+  form.budgetGroup = 'UNASSIGNED';
   errorMessage.value = null;
 }
 
@@ -137,6 +149,7 @@ watch(
         form.color = props.category.color || '#3b82f6';
         form.taxCategory = props.category.taxCategory || 'NONE';
         form.taxDeductionType = props.category.taxDeductionType || 'NONE';
+        form.budgetGroup = props.category.budgetGroup || 'UNASSIGNED';
       } else {
         resetForm();
       }
@@ -168,6 +181,7 @@ function handleSubmit() {
         color: form.color,
         taxCategory: form.taxCategory,
         taxDeductionType: form.taxDeductionType,
+        budgetGroup: form.type === 'EXPENSE' ? form.budgetGroup : 'UNASSIGNED',
       });
     } else {
       emit('created', {
@@ -177,6 +191,7 @@ function handleSubmit() {
         color: form.color,
         taxCategory: form.taxCategory,
         taxDeductionType: form.taxDeductionType,
+        budgetGroup: form.type === 'EXPENSE' ? form.budgetGroup : 'UNASSIGNED',
       });
     }
     resetForm();
@@ -293,6 +308,32 @@ function handleSubmit() {
               @click="form.color = col"
             />
           </div>
+        </div>
+
+        <!-- Clasificación Regla Presupuestaria 50/30/20 (Solo para gastos) -->
+        <div
+          v-if="form.type === 'EXPENSE'"
+          class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0f1523]/60 space-y-2"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <UIcon name="i-heroicons-chart-pie" class="w-4 h-4 text-emerald-400" />
+              <span class="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Regla Presupuestaria 50/30/20
+              </span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-medium">Planificación</span>
+          </div>
+          <p class="text-[11px] text-slate-400">
+            Clasifica este gasto para proyectar tu presupuesto mensual sobre el total de tus ingresos.
+          </p>
+          <USelect
+            v-model="form.budgetGroup"
+            :items="budgetGroupOptions"
+            value-key="value"
+            name="budgetGroup"
+            class="w-full"
+          />
         </div>
 
         <!-- Regla Tributaria SUNAT (Opcional - visible si el usuario tiene activo su perfil tributario) -->

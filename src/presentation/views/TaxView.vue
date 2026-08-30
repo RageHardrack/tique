@@ -36,6 +36,10 @@ async function handleToggleProfile(enable: boolean) {
       taxCountry: countryInput.value,
       taxRuc: rucInput.value.trim() || undefined,
     });
+    if (enable) {
+      await taxStore.fetchProjection(authStore.user.id);
+      await taxStore.fetchDeductibles(authStore.user.id);
+    }
   } finally {
     isActivating.value = false;
   }

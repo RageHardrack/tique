@@ -42,7 +42,7 @@ test.describe('Autenticación y Navegación E2E', () => {
     // Reportes
     await authenticatedPage.goto('/reportes');
     await expect(authenticatedPage).toHaveURL(/.*reportes/);
-    await expect(authenticatedPage.getByRole('banner').getByRole('heading', { name: 'Reportes Financieros' })).toBeVisible();
+    await expect(authenticatedPage.getByRole('heading', { level: 1, name: 'Reportes Financieros' })).toBeVisible();
   });
 
   test('permite plegar y desplegar la barra lateral en escritorio', async ({ authenticatedPage, isMobile }) => {

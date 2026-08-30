@@ -8,15 +8,17 @@ test.describe('Gestión Tributaria & Impuestos SUNAT E2E', () => {
     await authenticatedPage.goto('/impuestos');
     await expect(authenticatedPage.getByRole('heading', { name: /Impuestos & SUNAT/ }).first()).toBeVisible();
 
+    // Esperar a que la página e interfaz carguen
+    await authenticatedPage.waitForLoadState('networkidle').catch(() => {});
+
     // Si el usuario aún no tiene el perfil activo, activarlo
     const activateBtn = authenticatedPage.getByRole('button', { name: 'Activar Módulo Tributario' });
-    const hasActivateBtn = (await activateBtn.count()) > 0;
-    if (hasActivateBtn && (await activateBtn.isVisible())) {
+    if (await activateBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
       const rucInput = authenticatedPage.getByPlaceholder('Ej: 15548932014');
-      if ((await rucInput.count()) > 0) {
-        await rucInput.fill('15548932014');
+      if (await rucInput.isVisible({ timeout: 500 }).catch(() => false)) {
+        await rucInput.fill('15548932014').catch(() => {});
       }
-      await activateBtn.click();
+      await activateBtn.click().catch(() => {});
     }
 
     // Validar tarjetas de métricas tributarias

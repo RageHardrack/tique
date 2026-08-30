@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 
 import CreateBudgetModal from './CreateBudgetModal.vue';
+import Budget503020Panel from './Budget503020Panel.vue';
 import type { Category } from '../../../core/entities/Category';
 import type { Transaction } from '../../../core/entities/Transaction';
 import type { SupportedCurrency } from '../../../core/entities/Account';
@@ -46,6 +47,7 @@ const emit = defineEmits<{
   (e: 'delete', id: string): void;
 }>();
 
+const currentViewMode = ref<'CATEGORIES' | '50_30_20'>('CATEGORIES');
 const isCreateModalOpen = ref(false);
 const editingBudget = ref<Budget | null>(null);
 
@@ -150,6 +152,7 @@ function handleDelete(id: string) {
       </div>
 
       <UButton
+        v-if="currentViewMode === 'CATEGORIES'"
         color="primary"
         icon="i-heroicons-plus-circle"
         :disabled="categories.length === 0"
@@ -159,9 +162,51 @@ function handleDelete(id: string) {
       </UButton>
     </header>
 
-    <!-- Empty State -->
+    <!-- View Switcher Tabs -->
     <div
-      v-if="progressList.length === 0"
+      class="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 w-fit"
+    >
+      <button
+        type="button"
+        class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5"
+        :class="
+          currentViewMode === 'CATEGORIES'
+            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+            : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+        "
+        @click="currentViewMode = 'CATEGORIES'"
+      >
+        <UIcon name="i-heroicons-squares-2x2" class="w-4 h-4" />
+        Límites por Categoría
+      </button>
+      <button
+        type="button"
+        class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5"
+        :class="
+          currentViewMode === '50_30_20'
+            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+            : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+        "
+        @click="currentViewMode = '50_30_20'"
+      >
+        <UIcon name="i-heroicons-chart-pie" class="w-4 h-4 text-emerald-500" />
+        Regla 50/30/20
+      </button>
+    </div>
+
+    <!-- 50/30/20 Rule View -->
+    <div v-if="currentViewMode === '50_30_20'">
+      <Budget503020Panel
+        :categories="categories"
+        :transactions="transactions"
+        :budgets="budgets"
+        :currency="baseCurrency"
+      />
+    </div>
+
+    <!-- Empty State for Categories View -->
+    <div
+      v-else-if="progressList.length === 0"
       class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 dark:border-[#283a59] bg-white dark:bg-[#162032]/50 p-10 text-center space-y-3 shadow-sm"
     >
       <div

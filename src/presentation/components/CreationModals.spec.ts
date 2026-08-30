@@ -38,6 +38,7 @@ describe('Creation Modals Logic and Emits', () => {
         color: '#3b82f6',
         taxCategory: 'NONE',
         taxDeductionType: 'NONE',
+        budgetGroup: 'UNASSIGNED',
       });
     });
 
@@ -89,6 +90,7 @@ describe('Creation Modals Logic and Emits', () => {
         color: '#10b981',
         taxCategory: 'NONE',
         taxDeductionType: 'NONE',
+        budgetGroup: 'UNASSIGNED',
       });
     });
   });
