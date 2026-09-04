@@ -213,16 +213,33 @@ function applyCategorySuggestion(catId: string) {
   form.categoryId = catId;
 }
 
+const accountsCurrencyMap = computed(() => {
+  const map: Record<string, string> = {};
+  props.accounts.forEach((acc) => {
+    map[acc.id] = acc.currency || 'USD';
+  });
+  return map;
+});
+
 // Real-time Budget Overspending Alert
 const budgetAlert = computed(() => {
-  if (form.type !== 'EXPENSE' || !form.categoryId || !form.amount || Number(form.amount) <= 0) {
+  if (
+    form.type !== 'EXPENSE' ||
+    !form.categoryId ||
+    !form.amount ||
+    Number(form.amount) <= 0
+  ) {
     return null;
   }
   return BudgetAlertService.checkBudgetThreshold({
     categoryId: form.categoryId,
     transactionAmount: Number(form.amount),
+    transactionCurrency: selectedAccount.value?.currency || 'USD',
     budgets: budgetStore.budgets,
     monthlyTransactions: transactionStore.transactions,
+    accountsCurrencyMap: accountsCurrencyMap.value,
+    baseCurrency: rateStore.baseCurrency,
+    convertFn: (amount, from, to) => rateStore.convert(amount, from, to),
   });
 });
 
@@ -769,7 +786,11 @@ function handleSubmit() {
             <div class="space-y-0.5">
               <p class="font-bold">{{ budgetAlert.message }}</p>
               <p class="text-[10px] opacity-80">
-                Presupuesto {{ budgetAlert.budgetName }}: {{ budgetAlert.currentSpent }} gastados + {{ form.amount }} nuevo = {{ budgetAlert.newSpent }} / {{ budgetAlert.categoryLimit }}
+                {{ budgetAlert.budgetName }}:
+                {{ CurrencyFormatter.format(budgetAlert.currentSpent, budgetAlert.budgetCurrency) }} gastados +
+                {{ CurrencyFormatter.format(Math.round((budgetAlert.newSpent - budgetAlert.currentSpent) * 100) / 100, budgetAlert.budgetCurrency) }} nuevo =
+                {{ CurrencyFormatter.format(budgetAlert.newSpent, budgetAlert.budgetCurrency) }} /
+                {{ CurrencyFormatter.format(budgetAlert.categoryLimit, budgetAlert.budgetCurrency) }}
               </p>
             </div>
           </div>
