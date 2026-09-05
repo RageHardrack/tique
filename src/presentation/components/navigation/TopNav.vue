@@ -27,24 +27,27 @@ const currencyOptions = computed(() =>
 
 <template>
   <header
-    class="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-[#283a59]/60 bg-white/70 dark:bg-[#0B0F19]/70 backdrop-blur-xl transition-all"
+    class="sticky top-0 z-10 flex items-center justify-between px-3.5 sm:px-6 pt-[max(0.6rem,env(safe-area-inset-top))] pb-2.5 sm:pb-4 border-b border-slate-200 dark:border-[#283a59]/60 bg-white/80 dark:bg-[#0B0F19]/80 backdrop-blur-xl transition-all"
   >
     <!-- View Title & Subtitle -->
-    <div class="flex items-center gap-3">
-      <div>
+    <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 mr-2">
+      <div class="min-w-0 flex-1">
         <h1
-          class="text-xl font-black text-slate-900 dark:text-[#f1f5f9] tracking-tight"
+          class="text-base sm:text-xl font-black text-slate-900 dark:text-[#f1f5f9] tracking-tight truncate"
         >
           {{ title || 'Tique' }}
         </h1>
-        <p v-if="subtitle" class="text-xs text-slate-500 dark:text-[#4D7EA8]">
+        <p
+          v-if="subtitle"
+          class="text-[11px] sm:text-xs text-slate-500 dark:text-[#4D7EA8] truncate"
+        >
           {{ subtitle }}
         </p>
       </div>
     </div>
 
     <!-- Quick Actions Toolbar -->
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
       <!-- Dark/Light Theme Toggle -->
       <UButton
         color="neutral"
@@ -54,11 +57,13 @@ const currencyOptions = computed(() =>
         :title="
           themeStore.isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'
         "
+        aria-label="Cambiar tema de color"
+        class="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center cursor-pointer"
         @click="themeStore.toggleTheme"
       />
 
       <!-- Base Currency Selector -->
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center">
         <USelect
           v-model="rateStore.baseCurrency"
           :items="currencyOptions"
@@ -66,7 +71,8 @@ const currencyOptions = computed(() =>
           size="sm"
           color="neutral"
           variant="outline"
-          class="w-32 font-bold text-xs"
+          class="w-[78px] sm:w-32 font-bold text-xs"
+          aria-label="Moneda base"
         />
       </div>
 
@@ -76,9 +82,11 @@ const currencyOptions = computed(() =>
         variant="outline"
         size="sm"
         icon="i-heroicons-arrows-right-left"
+        aria-label="Tasas de cambio"
+        class="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center font-semibold cursor-pointer"
         @click="isExchangeRatesOpen = true"
       >
-        Tasas
+        <span class="hidden sm:inline">Tasas</span>
       </UButton>
     </div>
 
