@@ -6,7 +6,7 @@ const pwaStore = usePwaStore();
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-900 text-slate-100">
+  <div class="min-h-screen bg-slate-900 text-slate-100 overflow-x-hidden">
     <router-view />
     <ConfirmModal />
 
@@ -19,7 +19,7 @@ const pwaStore = usePwaStore();
         ¡Nueva versión disponible!
       </div>
       <div class="text-xs text-slate-400">
-        Actualizá la aplicación para obtener las últimas funciones.
+        Actualice la aplicación para obtener las últimas funciones.
       </div>
       <div class="flex gap-2 justify-end mt-2">
         <button

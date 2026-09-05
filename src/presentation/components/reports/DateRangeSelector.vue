@@ -97,10 +97,13 @@ watch(
     <!-- Collapsible Custom Date Range Picker -->
     <div
       v-if="modelValue === 'CUSTOM'"
-      class="p-4 rounded-2xl bg-white dark:bg-[#162032]/95 border border-slate-200 dark:border-[#283a59] shadow-sm animate-fadeIn"
+      class="p-4 rounded-2xl bg-white dark:bg-[#162032]/95 border border-slate-200 dark:border-[#283a59] shadow-sm animate-fadeIn space-y-3"
     >
-      <div class="text-xs font-bold text-slate-500 dark:text-[#4D7EA8] uppercase tracking-wider mb-3">
-        Seleccionar Rango de Fechas
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold text-slate-500 dark:text-[#4D7EA8] uppercase tracking-wider flex items-center gap-1.5">
+          <UIcon name="i-heroicons-calendar-days" class="w-4 h-4 text-primary-500" />
+          Seleccionar Rango de Fechas
+        </span>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -111,7 +114,9 @@ watch(
             id="custom-start-date"
             v-model="internalStart"
             type="date"
-            class="w-full"
+            icon="i-heroicons-calendar"
+            size="md"
+            class="w-full min-h-[44px]"
             @change="handleCustomDateChange"
           />
         </div>
@@ -123,7 +128,9 @@ watch(
             id="custom-end-date"
             v-model="internalEnd"
             type="date"
-            class="w-full"
+            icon="i-heroicons-calendar"
+            size="md"
+            class="w-full min-h-[44px]"
             @change="handleCustomDateChange"
           />
         </div>

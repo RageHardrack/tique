@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "PORTLESS_PORT=1355 PORTLESS_HTTPS=0 portless run vite",
     "dev:http": "PORTLESS_PORT=1355 PORTLESS_HTTPS=0 portless run vite",
-    "build": "vue-tsc -b && vite build",
+    "build": "bun x --bun vue-tsc -b && bun x --bun vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "bun x --bun vitest run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "format": "prettier --write \"src/**/*.{ts,vue,js,json}\""
