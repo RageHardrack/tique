@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 import { defineStore } from 'pinia';
 
@@ -10,7 +10,8 @@ import {
 } from '../../core/services/CurrencyConverter';
 import { ApiClient } from '../../infrastructure/api/api-client';
 
-const STORAGE_KEY_BASE = 'financiapp_base_currency';
+const STORAGE_KEY_BASE = 'tique_base_currency';
+const LEGACY_STORAGE_KEY_BASE = 'financiapp_base_currency';
 const STORAGE_KEY_RATES = 'financiapp_exchange_rates';
 const STORAGE_KEY_SOURCES = 'financiapp_exchange_sources';
 const STORAGE_KEY_UPDATED = 'financiapp_exchange_updated_at';
@@ -18,9 +19,16 @@ const STORAGE_KEY_UPDATED = 'financiapp_exchange_updated_at';
 function loadStoredBase(): SupportedCurrency {
   try {
     if (typeof localStorage !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEY_BASE);
-      if (stored === 'USD' || stored === 'PEN' || stored === 'VES') {
-        return stored;
+      const stored =
+        localStorage.getItem(STORAGE_KEY_BASE) ||
+        localStorage.getItem(LEGACY_STORAGE_KEY_BASE);
+      if (
+        stored === 'USD' ||
+        stored === 'PEN' ||
+        stored === 'VES' ||
+        stored === 'EUR'
+      ) {
+        return stored as SupportedCurrency;
       }
     }
   } catch {
@@ -73,6 +81,16 @@ export const useExchangeRateStore = defineStore('exchangeRates', () => {
   );
   const isLoading = ref(false);
   const isSyncing = ref(false);
+
+  watch(baseCurrency, (newCurrency) => {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY_BASE, newCurrency);
+      }
+    } catch {
+      // Ignore error
+    }
+  });
 
   function setBaseCurrency(currency: SupportedCurrency) {
     baseCurrency.value = currency;

@@ -72,4 +72,36 @@ describe('useExchangeRateStore', () => {
     expect(store.sources.VES).toBe('BCV');
     expect(store.lastUpdated).toBe('2026-08-29T20:00:00.000Z');
   });
+
+  it('should persist base currency to localStorage on direct assignment', async () => {
+    const store = useExchangeRateStore();
+    store.baseCurrency = 'PEN';
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(localStorage.getItem('tique_base_currency')).toBe('PEN');
+  });
+
+  it('should persist base currency to localStorage on setBaseCurrency call', () => {
+    const store = useExchangeRateStore();
+    store.setBaseCurrency('VES');
+    expect(localStorage.getItem('tique_base_currency')).toBe('VES');
+  });
+
+  it('should restore base currency from localStorage upon store initialization', () => {
+    localStorage.setItem('tique_base_currency', 'PEN');
+    const store = useExchangeRateStore();
+    expect(store.baseCurrency).toBe('PEN');
+  });
+
+  it('should restore base currency from legacy storage key financiapp_base_currency', () => {
+    localStorage.setItem('financiapp_base_currency', 'VES');
+    const store = useExchangeRateStore();
+    expect(store.baseCurrency).toBe('VES');
+  });
+
+  it('should fall back to USD when stored currency is invalid or corrupted', () => {
+    localStorage.setItem('tique_base_currency', 'INVALID_CURRENCY');
+    const store = useExchangeRateStore();
+    expect(store.baseCurrency).toBe('USD');
+  });
 });
