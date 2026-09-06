@@ -28,8 +28,8 @@ describe('DateFormatter Service (dayjs & Timezone Protection)', () => {
     const isoToday = DateFormatter.toIsoString(todayStr);
     expect(isoToday).toContain('T');
 
-    const pastIso = DateFormatter.toIsoString('2026-09-06');
-    expect(pastIso).toBe('2026-09-06T12:00:00.000Z');
+    const pastIso = DateFormatter.toIsoString('2020-01-15');
+    expect(pastIso).toBe('2020-01-15T12:00:00.000Z');
   });
 
   it('formats date range cleanly preserving calendar dates', () => {
