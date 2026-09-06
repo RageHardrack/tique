@@ -9,6 +9,7 @@ Se conecta a la API backend **Guilliman** mediante cliente HTTP centralizado (`A
 ## 🌟 Módulos y Capacidades
 
 - **Cuentas Multimoneda**: Gestión de cuentas bancarias, billeteras digitales y efectivo con conversión en tiempo real a moneda base (USD, PEN, VES) y tasas configurables.
+- **Tasa de Cambio Diaria por Transacción (VES / USD)**: Captura y almacenamiento de la tasa del momento en operaciones en bolívares con previsualización en vivo en USD, edición manual y preservación determinista del poder adquisitivo histórico en los presupuestos mensuales frente a la inflación.
 - **Conciliación & Ajuste de Saldos Reales**: Comparación directa entre saldo contable y saldo real de banco/billetera con generación atómica de movimientos de ajuste y cálculo de discrepancias.
 - **Analítica Visual**: Gráfico Donut interactivo SVG para distribución de gastos por categoría y tarjeta de Flujo de Caja Neto con cálculo automático de tasa de ahorro mensual.
 - **Registro Rápido Diario (Mobile Quick-Add & FAB)**: Botón flotante ergonómico para una sola mano, bottom sheet con input numérico táctil grande, detección automática de gastos frecuentes y PWA Web App Shortcuts (`Nuevo Gasto`, `Nuevo Ingreso`).
@@ -42,7 +43,7 @@ Se conecta a la API backend **Guilliman** mediante cliente HTTP centralizado (`A
 - **Build Tool**: [Vite](https://vitejs.dev/) + `@nuxt/ui/vite`
 - **Gestor de Paquetes**: [Bun](https://bun.sh/)
 - **Gestión de Puertos**: [Portless](https://portless.org/) (`PORTLESS_PORT=1355 PORTLESS_HTTPS=0 portless run ...`)
-- **Unit Testing**: [Vitest](https://vitest.dev/) con 100% de pruebas pasando (197/197 tests en 39 suites)
+- **Unit Testing**: [Vitest](https://vitest.dev/) con 100% de pruebas pasando (228/228 tests en 44 suites)
 - **E2E Testing**: [Playwright](https://playwright.dev/) con suite multi-dispositivo (16/16 suites, 38 tests pasando en Desktop & Mobile)
 
 ---

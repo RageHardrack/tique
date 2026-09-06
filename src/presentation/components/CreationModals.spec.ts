@@ -543,6 +543,16 @@ describe('Creation Modals Logic and Emits', () => {
         createdAt: '',
         updatedAt: '',
       },
+      {
+        id: 'acc-ves',
+        userId: 'u1',
+        name: 'Cuenta Bolívares',
+        type: 'CHECKING' as const,
+        balance: 50000,
+        currency: 'VES',
+        createdAt: '',
+        updatedAt: '',
+      },
     ];
 
     it('should calculate destination amount and exchange rate for cross-currency transfer', async () => {
@@ -576,6 +586,95 @@ describe('Creation Modals Logic and Emits', () => {
         amount: 50,
         destinationAmount: 187.5,
         exchangeRate: 3.75,
+      });
+    });
+
+    it('should require and emit exchangeRate for VES expense and compute live USD equivalent', async () => {
+      const wrapper = mount(CreateTransactionModal, {
+        props: {
+          open: true,
+          accounts: mockAccounts,
+          categories: [],
+        },
+      });
+
+      const vm = wrapper.vm as any;
+      vm.form.type = 'EXPENSE';
+      vm.form.accountId = 'acc-ves';
+      vm.form.amount = 8137.4;
+      vm.form.exchangeRate = 813.74;
+
+      expect(vm.isVesTransaction).toBe(true);
+      expect(vm.liveUsdEquivalent).toContain('10.00');
+
+      vm.handleSubmit();
+
+      const createEvents = wrapper.emitted('created');
+      expect(createEvents).toBeTruthy();
+      expect(createEvents?.[0][0]).toMatchObject({
+        type: 'EXPENSE',
+        accountId: 'acc-ves',
+        amount: 8137.4,
+        exchangeRate: 813.74,
+      });
+    });
+
+    it('should block submission when VES transaction has missing or invalid exchangeRate', async () => {
+      const wrapper = mount(CreateTransactionModal, {
+        props: {
+          open: true,
+          accounts: mockAccounts,
+          categories: [],
+        },
+      });
+
+      const vm = wrapper.vm as any;
+      vm.form.type = 'EXPENSE';
+      vm.form.accountId = 'acc-ves';
+      vm.form.amount = 5000;
+      vm.form.exchangeRate = 0;
+
+      vm.handleSubmit();
+
+      expect(vm.errorMessage).toContain('Debes ingresar la tasa de cambio');
+      expect(wrapper.emitted('created')).toBeFalsy();
+    });
+
+    it('should allow editing exchangeRate for an existing VES transaction', async () => {
+      const existingTx = {
+        id: 'tx-ves-1',
+        userId: 'u1',
+        accountId: 'acc-ves',
+        amount: 8137.4,
+        exchangeRate: 813.74,
+        type: 'EXPENSE' as const,
+        date: '2026-09-01T10:00:00.000Z',
+        createdAt: '',
+        updatedAt: '',
+      };
+
+      const wrapper = mount(CreateTransactionModal, {
+        props: {
+          open: true,
+          transaction: existingTx,
+          accounts: mockAccounts,
+          categories: [],
+        },
+      });
+
+      const vm = wrapper.vm as any;
+      expect(vm.form.exchangeRate).toBe(813.74);
+      expect(vm.liveUsdEquivalent).toContain('10.00');
+
+      vm.form.exchangeRate = 820.0;
+      vm.handleSubmit();
+
+      const updateEvents = wrapper.emitted('updated');
+      expect(updateEvents).toBeTruthy();
+      expect(updateEvents?.[0][1]).toMatchObject({
+        accountId: 'acc-ves',
+        amount: 8137.4,
+        exchangeRate: 820.0,
       });
     });
 

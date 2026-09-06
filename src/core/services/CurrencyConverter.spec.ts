@@ -45,4 +45,44 @@ describe('CurrencyConverter Domain Service', () => {
       5000,
     );
   });
+
+  describe('convertTransaction', () => {
+    it('should convert VES to USD using the specific transaction exchange rate', () => {
+      // 8137.40 VES at rate 813.74 -> exactly 10.00 USD
+      const usdAmount = CurrencyConverter.convertTransaction(
+        8137.4,
+        'VES',
+        'USD',
+        813.74,
+      );
+      expect(usdAmount).toBe(10);
+    });
+
+    it('should convert VES to PEN using transaction exchange rate for VES and store rate for PEN', () => {
+      // 8137.40 VES at rate 813.74 -> 10 USD -> 10 * 3.75 = 37.5 PEN
+      const penAmount = CurrencyConverter.convertTransaction(
+        8137.4,
+        'VES',
+        'PEN',
+        813.74,
+      );
+      expect(penAmount).toBe(37.5);
+    });
+
+    it('should fall back to standard convert when transaction exchange rate is missing or <= 0', () => {
+      // 3950 VES -> 100 USD (at default 39.5)
+      expect(CurrencyConverter.convertTransaction(3950, 'VES', 'USD', null)).toBe(
+        100,
+      );
+      expect(CurrencyConverter.convertTransaction(3950, 'VES', 'USD', 0)).toBe(
+        100,
+      );
+    });
+
+    it('should return same amount when source and target currencies are equal', () => {
+      expect(
+        CurrencyConverter.convertTransaction(500, 'VES', 'VES', 813.74),
+      ).toBe(500);
+    });
+  });
 });

@@ -205,4 +205,69 @@ describe('BudgetAlertService (Multi-Currency)', () => {
     expect(result?.currentSpent).toBeCloseTo(73.53, 1);
     expect(result?.newSpent).toBeCloseTo(257.23, 1);
   });
+
+  it('preserves historical transaction USD value using stored exchangeRate even if market rate changes', () => {
+    // Past transaction: 8,137.40 VES recorded at rate 813.74 -> exactly $10.00 USD
+    const monthlyTransactions: Transaction[] = [
+      {
+        id: 'tx-historical-1',
+        userId: 'u-1',
+        accountId: 'acc-ves',
+        categoryId: 'cat-mercado',
+        amount: 8137.4,
+        exchangeRate: 813.74,
+        type: 'EXPENSE',
+        date: '2026-09-01T00:00:00Z',
+        createdAt: '2026-09-01T00:00:00Z',
+        updatedAt: '2026-09-01T00:00:00Z',
+      },
+    ];
+
+    // Market rate today is wildly different: e.g. 1 USD = 1,000.00 VES
+    const floatingConvertFn = (
+      amount: number,
+      fromCurrency: string,
+      toCurrency: SupportedCurrency,
+    ): number => {
+      if (fromCurrency === 'VES' && toCurrency === 'USD') {
+        return amount / 1000.0;
+      }
+      return amount;
+    };
+
+    // User adds new transaction in USD of $15.00
+    const result = BudgetAlertService.checkBudgetThreshold({
+      categoryId: 'cat-mercado',
+      transactionAmount: 15,
+      transactionCurrency: 'USD',
+      budgets,
+      monthlyTransactions,
+      accountsCurrencyMap,
+      baseCurrency: 'USD',
+      convertFn: floatingConvertFn,
+    });
+
+    // currentSpent MUST be 10.00 (from 8137.40 / 813.74), NOT 8.14 (from 8137.40 / 1000)
+    expect(result?.currentSpent).toBe(10);
+    expect(result?.newSpent).toBe(25);
+  });
+
+  it('uses transactionExchangeRate for the new transaction being evaluated if provided', () => {
+    const monthlyTransactions: Transaction[] = [];
+
+    // New transaction: 8,137.40 VES with specific rate 813.74 ($10.00 USD)
+    const result = BudgetAlertService.checkBudgetThreshold({
+      categoryId: 'cat-mercado',
+      transactionAmount: 8137.4,
+      transactionCurrency: 'VES',
+      transactionExchangeRate: 813.74,
+      budgets,
+      monthlyTransactions,
+      accountsCurrencyMap,
+      baseCurrency: 'USD',
+      convertFn: () => 9999, // Should NOT be used
+    });
+
+    expect(result?.newSpent).toBe(10);
+  });
 });

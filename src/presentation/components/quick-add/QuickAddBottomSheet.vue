@@ -6,6 +6,7 @@ import { useTransactionStore } from '../../store/transactions';
 import { useAuthStore } from '../../store/auth';
 import { useExchangeRateStore } from '../../store/exchange-rates';
 import { FrequentTransactionsService, type FrequentPattern } from '../../../core/services/FrequentTransactionsService';
+import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
 
 interface Props {
   open: boolean;
@@ -33,6 +34,7 @@ const selectedAccountId = ref('');
 const selectedCategoryId = ref('');
 const categorySearch = ref('');
 const amount = ref<number | ''>('');
+const exchangeRate = ref<number | null>(null);
 const note = ref('');
 const isSubmitting = ref(false);
 const errorMessage = ref<string | null>(null);
@@ -58,12 +60,42 @@ const activeAccountCurrency = computed(() => {
   return acc?.currency || rateStore.baseCurrency;
 });
 
+const isVesAccount = computed(() => activeAccountCurrency.value === 'VES');
+
+const liveUsdEquivalent = computed(() => {
+  if (
+    !isVesAccount.value ||
+    !amount.value ||
+    !exchangeRate.value ||
+    Number(exchangeRate.value) <= 0
+  ) {
+    return null;
+  }
+  const usd = Number(amount.value) / Number(exchangeRate.value);
+  return CurrencyFormatter.format(usd, 'USD');
+});
+
+watch(
+  () => activeAccountCurrency.value,
+  (curr) => {
+    if (curr === 'VES') {
+      if (!exchangeRate.value) {
+        exchangeRate.value = rateStore.rates.VES || null;
+      }
+    } else {
+      exchangeRate.value = null;
+    }
+  },
+  { immediate: true },
+);
+
 function resetForm() {
   txType.value = props.initialType || 'EXPENSE';
   selectedAccountId.value = accountStore.accounts.length > 0 ? accountStore.accounts[0].id : '';
   selectedCategoryId.value = '';
   categorySearch.value = '';
   amount.value = '';
+  exchangeRate.value = activeAccountCurrency.value === 'VES' ? (rateStore.rates.VES || null) : null;
   note.value = '';
   errorMessage.value = null;
 }
@@ -97,6 +129,10 @@ async function handleSubmit() {
   }
   if (!selectedAccountId.value) {
     errorMessage.value = 'Por favor selecciona una cuenta.';
+    return;
+  }
+  if (isVesAccount.value && (!exchangeRate.value || Number(exchangeRate.value) <= 0)) {
+    errorMessage.value = 'Debes ingresar la tasa de cambio del día (VES/USD).';
     return;
   }
   if (!authStore.user?.id) return;
@@ -135,6 +171,10 @@ async function handleSubmit() {
       accountId: selectedAccountId.value,
       categoryId: selectedCategoryId.value || undefined,
       amount: Number(amount.value),
+      exchangeRate:
+        isVesAccount.value && exchangeRate.value
+          ? Number(exchangeRate.value)
+          : undefined,
       type: txType.value,
       date: new Date().toISOString(),
       note: note.value.trim() || undefined,
@@ -262,6 +302,35 @@ async function handleSubmit() {
               class="w-full pl-12 pr-4 py-3 text-2xl font-black rounded-xl bg-slate-50 dark:bg-[#0f1523] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-mono min-h-[56px]"
             />
           </div>
+        </div>
+
+        <!-- VES Exchange Rate Field & Live USD Preview -->
+        <div
+          v-if="isVesAccount"
+          class="space-y-1.5 p-3 rounded-xl bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800"
+        >
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <UIcon name="i-heroicons-arrows-right-left" class="w-4 h-4 text-emerald-500" />
+              Tasa del día (VES/USD) <span class="text-red-400">*</span>
+            </label>
+            <span
+              v-if="liveUsdEquivalent"
+              class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30"
+            >
+              ≈ {{ liveUsdEquivalent }}
+            </span>
+          </div>
+          <UInput
+            v-model.number="exchangeRate"
+            type="number"
+            step="0.0001"
+            min="0.0001"
+            placeholder="Ej. 813.74"
+            size="sm"
+            class="w-full"
+            required
+          />
         </div>
 
         <!-- Fast Account Selection -->

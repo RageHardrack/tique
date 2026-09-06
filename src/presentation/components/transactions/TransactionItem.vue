@@ -166,6 +166,12 @@ function handleDelete() {
         >
           ➔ {{ formattedDestinationAmount }}
         </span>
+        <span
+          v-else-if="transaction.exchangeRate"
+          class="text-[10px] font-medium text-slate-400 dark:text-slate-500"
+        >
+          Tasa: {{ transaction.exchangeRate }}
+        </span>
       </div>
 
       <div class="flex items-center gap-1">

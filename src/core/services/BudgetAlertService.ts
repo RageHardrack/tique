@@ -1,6 +1,7 @@
 import type { Budget } from '../entities/Budget';
 import type { Transaction } from '../entities/Transaction';
 import type { SupportedCurrency } from '../entities/Account';
+import { CurrencyConverter } from './CurrencyConverter';
 
 export type BudgetAlertLevel = 'SAFE' | 'WARNING_80' | 'EXCEEDED_100';
 
@@ -20,6 +21,7 @@ export interface CheckBudgetThresholdParams {
   categoryId: string;
   transactionAmount: number;
   transactionCurrency?: string;
+  transactionExchangeRate?: number | null;
   budgets: Budget[];
   monthlyTransactions?: Transaction[];
   accountsCurrencyMap?: Record<string, string>;
@@ -44,6 +46,7 @@ export class BudgetAlertService {
       categoryId,
       transactionAmount,
       transactionCurrency = 'USD',
+      transactionExchangeRate,
       budgets,
       monthlyTransactions = [],
       accountsCurrencyMap = {},
@@ -60,8 +63,25 @@ export class BudgetAlertService {
     const targetBudgetCurrency = (budget.currency || baseCurrency) as SupportedCurrency;
 
     // Convert helper
-    const toTargetCurrency = (amount: number, fromCurrency: string): number => {
-      if (!convertFn || fromCurrency === targetBudgetCurrency) return amount;
+    const toTargetCurrency = (
+      amount: number,
+      fromCurrency: string,
+      exchangeRate?: number | null,
+    ): number => {
+      if (fromCurrency === targetBudgetCurrency) return amount;
+      if (
+        exchangeRate !== null &&
+        exchangeRate !== undefined &&
+        exchangeRate > 0
+      ) {
+        return CurrencyConverter.convertTransaction(
+          amount,
+          fromCurrency,
+          targetBudgetCurrency,
+          exchangeRate,
+        );
+      }
+      if (!convertFn) return amount;
       return convertFn(amount, fromCurrency, targetBudgetCurrency);
     };
 
@@ -70,13 +90,14 @@ export class BudgetAlertService {
       .filter((t) => t.type === 'EXPENSE' && t.categoryId === categoryId)
       .reduce((sum, t) => {
         const sourceCurrency = accountsCurrencyMap[t.accountId] || targetBudgetCurrency;
-        const converted = toTargetCurrency(t.amount || 0, sourceCurrency);
+        const converted = toTargetCurrency(t.amount || 0, sourceCurrency, t.exchangeRate);
         return sum + converted;
       }, 0);
 
     const convertedNewAmount = toTargetCurrency(
       transactionAmount,
       transactionCurrency,
+      transactionExchangeRate,
     );
 
     const newSpent = currentSpent + convertedNewAmount;

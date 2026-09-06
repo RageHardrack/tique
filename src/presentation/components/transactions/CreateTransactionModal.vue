@@ -126,6 +126,36 @@ const isCrossCurrency = computed(() => {
   );
 });
 
+const isVesTransaction = computed(
+  () => selectedAccount.value?.currency === 'VES',
+);
+
+const liveUsdEquivalent = computed(() => {
+  if (
+    !isVesTransaction.value ||
+    !form.amount ||
+    !form.exchangeRate ||
+    Number(form.exchangeRate) <= 0
+  ) {
+    return null;
+  }
+  const usd = Number(form.amount) / Number(form.exchangeRate);
+  return CurrencyFormatter.format(usd, 'USD');
+});
+
+watch(
+  () => selectedAccount.value?.currency,
+  (newCurrency) => {
+    if (newCurrency === 'VES') {
+      if (!form.exchangeRate) {
+        form.exchangeRate = rateStore.rates.VES || null;
+      }
+    } else if (form.type !== 'TRANSFER') {
+      form.exchangeRate = null;
+    }
+  },
+);
+
 function calculateDestinationAmount() {
   if (
     isCrossCurrency.value &&
@@ -235,6 +265,10 @@ const budgetAlert = computed(() => {
     categoryId: form.categoryId,
     transactionAmount: Number(form.amount),
     transactionCurrency: selectedAccount.value?.currency || 'USD',
+    transactionExchangeRate:
+      isVesTransaction.value && form.exchangeRate
+        ? Number(form.exchangeRate)
+        : undefined,
     budgets: budgetStore.budgets,
     monthlyTransactions: transactionStore.transactions,
     accountsCurrencyMap: accountsCurrencyMap.value,
@@ -464,6 +498,15 @@ function handleSubmit() {
     }
   }
 
+  if (
+    isVesTransaction.value &&
+    form.type !== 'TRANSFER' &&
+    (!form.exchangeRate || Number(form.exchangeRate) <= 0)
+  ) {
+    errorMessage.value = 'Debes ingresar la tasa de cambio del día (VES/USD).';
+    return;
+  }
+
   isSubmitting.value = true;
 
   const destinationAmountValue =
@@ -480,7 +523,9 @@ function handleSubmit() {
         : form.amount && destinationAmountValue
           ? Number((destinationAmountValue / Number(form.amount)).toFixed(4))
           : undefined
-      : undefined;
+      : isVesTransaction.value && form.exchangeRate !== null && form.exchangeRate !== undefined
+        ? Number(form.exchangeRate)
+        : undefined;
 
   const isoDate = DateFormatter.toIsoString(form.date);
 
@@ -759,6 +804,37 @@ function handleSubmit() {
             autofocus
             @input="handleAmountInput"
           />
+
+          <!-- VES Exchange Rate Field & Live USD Preview -->
+          <div
+            v-if="isVesTransaction"
+            class="space-y-2 p-3 rounded-xl bg-slate-900/60 border border-slate-800"
+          >
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                <UIcon name="i-heroicons-arrows-right-left" class="w-4 h-4 text-emerald-400" />
+                Tasa de cambio del día (VES/USD) <span class="text-red-400">*</span>
+              </label>
+              <span
+                v-if="liveUsdEquivalent"
+                class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30"
+              >
+                ≈ {{ liveUsdEquivalent }}
+              </span>
+            </div>
+            <UInput
+              v-model.number="form.exchangeRate"
+              type="number"
+              step="0.0001"
+              min="0.0001"
+              placeholder="Ej. 813.74"
+              class="w-full text-sm font-medium"
+              required
+            />
+            <p class="text-[11px] text-slate-400">
+              Tasa del momento para calcular el valor real histórico en USD.
+            </p>
+          </div>
 
           <!-- Real-Time Budget Overspending Warning -->
           <div

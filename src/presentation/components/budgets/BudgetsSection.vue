@@ -8,6 +8,7 @@ import type { Transaction } from '../../../core/entities/Transaction';
 import type { SupportedCurrency } from '../../../core/entities/Account';
 import type { Budget, BudgetProgress } from '../../../core/entities/Budget';
 import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
+import { CurrencyConverter } from '../../../core/services/CurrencyConverter';
 
 interface Props {
   budgets: Budget[];
@@ -77,11 +78,17 @@ const categorySpentMap = computed(() => {
     .filter((tx) => tx.type === 'EXPENSE' && tx.categoryId)
     .forEach((tx) => {
       const sourceCurrency = props.accountsCurrencyMap[tx.accountId] || 'USD';
-      const converted = props.convertFn(
-        tx.amount,
-        sourceCurrency,
-        props.baseCurrency,
-      );
+      const converted =
+        tx.exchangeRate !== null &&
+        tx.exchangeRate !== undefined &&
+        tx.exchangeRate > 0
+          ? CurrencyConverter.convertTransaction(
+              tx.amount,
+              sourceCurrency,
+              props.baseCurrency,
+              tx.exchangeRate,
+            )
+          : props.convertFn(tx.amount, sourceCurrency, props.baseCurrency);
       const catId = tx.categoryId!;
       map[catId] = (map[catId] || 0) + converted;
     });
