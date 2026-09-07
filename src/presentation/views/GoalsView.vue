@@ -8,7 +8,8 @@ import { useGoalStore } from '../store/goals';
 import { useAccountStore } from '../store/accounts';
 import { useAuthStore } from '../store/auth';
 import { useExchangeRateStore } from '../store/exchange-rates';
-import type { CreateGoalInput, SavingsGoal, UpdateGoalInput } from '../../core/entities/Goal';
+import type { CreateGoalInput, GoalPriority, SavingsGoal, UpdateGoalInput } from '../../core/entities/Goal';
+import { PRIORITY_ORDER } from '../../core/entities/Goal';
 import { useConfirm } from '../composables/useConfirm';
 
 const authStore = useAuthStore();
@@ -23,6 +24,14 @@ const editingGoal = ref<SavingsGoal | null>(null);
 const isDepositModalOpen = ref(false);
 const targetGoal = ref<SavingsGoal | null>(null);
 const depositMode = ref<'deposit' | 'withdraw'>('deposit');
+
+const selectedPriority = ref<'ALL' | GoalPriority>('ALL');
+const priorityTabs: { label: string; value: 'ALL' | GoalPriority }[] = [
+  { label: 'Todas', value: 'ALL' },
+  { label: 'Alta', value: 'HIGH' },
+  { label: 'Media', value: 'MEDIUM' },
+  { label: 'Baja', value: 'LOW' },
+];
 
 onMounted(async () => {
   if (authStore.user?.id) {
@@ -101,7 +110,25 @@ async function handleConfirmTransaction(payload: {
   }
 }
 
-const activeGoals = computed(() => goalStore.goals.filter((g) => !g.isCompleted));
+const activeGoals = computed(() => {
+  let list = goalStore.goals.filter((g) => !g.isCompleted);
+  if (selectedPriority.value !== 'ALL') {
+    list = list.filter((g) => (g.priority || 'MEDIUM') === selectedPriority.value);
+  }
+  return list.slice().sort((a, b) => {
+    const weightA = PRIORITY_ORDER[a.priority || 'MEDIUM'] ?? 2;
+    const weightB = PRIORITY_ORDER[b.priority || 'MEDIUM'] ?? 2;
+    if (weightA !== weightB) {
+      return weightA - weightB;
+    }
+    if (a.targetDate && b.targetDate) {
+      return new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime();
+    }
+    if (a.targetDate) return -1;
+    if (b.targetDate) return 1;
+    return 0;
+  });
+});
 const completedGoals = computed(() => goalStore.goals.filter((g) => g.isCompleted));
 </script>
 
@@ -158,14 +185,34 @@ const completedGoals = computed(() => goalStore.goals.filter((g) => g.isComplete
       </section>
 
       <!-- Active Goals Grid -->
-      <section class="space-y-3">
-        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-amber-500" />
-          Metas en Progreso ({{ activeGoals.length }})
-        </h3>
+      <section class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-amber-500" />
+            Metas en Progreso ({{ activeGoals.length }})
+          </h3>
+
+          <!-- Filter by Priority -->
+          <div class="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 w-fit">
+            <button
+              v-for="tab in priorityTabs"
+              :key="tab.value"
+              type="button"
+              class="px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer"
+              :class="[
+                selectedPriority === tab.value
+                  ? 'bg-white dark:bg-[#162032] text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white',
+              ]"
+              @click="selectedPriority = tab.value"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
+        </div>
 
         <div v-if="activeGoals.length === 0" class="py-12 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-[#162032]/50 text-slate-400 dark:text-slate-500 text-sm">
-          No tienes metas de ahorro activas. ¡Crea tu primer fondo de ahorro especial!
+          {{ selectedPriority === 'ALL' ? 'No tienes metas de ahorro activas. ¡Crea tu primer fondo de ahorro especial!' : 'No hay metas con la prioridad seleccionada.' }}
         </div>
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

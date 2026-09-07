@@ -36,6 +36,31 @@ const daysRemaining = computed(() => {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   return diffDays;
 });
+
+const priorityConfig = computed(() => {
+  const p = props.goal.priority || 'MEDIUM';
+  switch (p) {
+    case 'HIGH':
+      return {
+        label: 'Alta',
+        classes: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50',
+        dot: 'bg-rose-500',
+      };
+    case 'LOW':
+      return {
+        label: 'Baja',
+        classes: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700',
+        dot: 'bg-slate-400',
+      };
+    case 'MEDIUM':
+    default:
+      return {
+        label: 'Media',
+        classes: 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50',
+        dot: 'bg-blue-500',
+      };
+  }
+});
 </script>
 
 <template>
@@ -55,7 +80,14 @@ const daysRemaining = computed(() => {
           <h3 class="text-base font-bold text-slate-900 dark:text-[#f1f5f9] leading-snug">
             {{ goal.name }}
           </h3>
-          <div class="text-xs text-slate-500 dark:text-[#4D7EA8] flex items-center gap-2 mt-0.5">
+          <div class="text-xs text-slate-500 dark:text-[#4D7EA8] flex items-center gap-2 mt-0.5 flex-wrap">
+            <span
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold"
+              :class="priorityConfig.classes"
+            >
+              <span class="w-1.5 h-1.5 rounded-full" :class="priorityConfig.dot" />
+              {{ priorityConfig.label }}
+            </span>
             <span v-if="daysRemaining !== null">
               <span v-if="daysRemaining > 0">{{ daysRemaining }} días restantes</span>
               <span v-else-if="daysRemaining === 0" class="text-amber-500 font-semibold">Vence hoy</span>

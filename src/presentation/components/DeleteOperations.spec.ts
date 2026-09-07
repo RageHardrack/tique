@@ -201,6 +201,7 @@ describe('Exhaustive DELETE Operations Suite - UI Components', () => {
         targetDate: null,
         color: null,
         icon: null,
+        priority: 'MEDIUM' as const,
         isCompleted: false,
         createdAt: '',
         updatedAt: '',

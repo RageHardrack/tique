@@ -20,6 +20,7 @@ describe('useGoalStore - Sinking Funds & Savings Goals', () => {
     targetDate: '2026-12-31',
     color: '#10B981',
     icon: 'i-heroicons-shield-check',
+    priority: 'HIGH' as const,
     isCompleted: false,
     createdAt: '2026-01-01',
     updatedAt: '2026-01-01',
@@ -64,5 +65,39 @@ describe('useGoalStore - Sinking Funds & Savings Goals', () => {
 
     expect(result.currentAmount).toBe(2000);
     expect(store.goals[0].currentAmount).toBe(2000);
+  });
+
+  it('should create a goal with priority and add it to state', async () => {
+    const store = useGoalStore();
+    const newGoal = {
+      ...mockGoal,
+      id: 'goal-3',
+      name: 'Viaje a Japón',
+      priority: 'HIGH' as const,
+    };
+    vi.spyOn(ApiClient, 'post').mockResolvedValueOnce(newGoal);
+
+    const result = await store.createGoal({
+      name: 'Viaje a Japón',
+      targetAmount: 5000,
+      priority: 'HIGH',
+    });
+
+    expect(result.priority).toBe('HIGH');
+    expect(store.goals.length).toBe(1);
+    expect(store.goals[0].priority).toBe('HIGH');
+  });
+
+  it('should update a goal priority and reflect in state', async () => {
+    const store = useGoalStore();
+    store.goals = [{ ...mockGoal, priority: 'MEDIUM' as const }];
+
+    const updatedGoal = { ...mockGoal, priority: 'LOW' as const };
+    vi.spyOn(ApiClient, 'put').mockResolvedValueOnce(updatedGoal);
+
+    const result = await store.updateGoal('goal-1', { priority: 'LOW' });
+
+    expect(result.priority).toBe('LOW');
+    expect(store.goals[0].priority).toBe('LOW');
   });
 });

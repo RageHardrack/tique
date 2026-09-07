@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
-import type { CreateGoalInput, SavingsGoal, UpdateGoalInput } from '../../../core/entities/Goal';
+import type { CreateGoalInput, GoalPriority, SavingsGoal, UpdateGoalInput } from '../../../core/entities/Goal';
 
 interface Props {
   open: boolean;
@@ -31,6 +31,7 @@ const form = reactive({
   targetDate: '',
   color: '#10B981',
   icon: 'i-heroicons-shield-check',
+  priority: 'MEDIUM' as GoalPriority,
 });
 
 const errorMessage = ref<string | null>(null);
@@ -62,6 +63,12 @@ const currencyOptions = [
   { label: 'VES (Bs.)', value: 'VES' },
 ];
 
+const priorityOptions = [
+  { label: 'Alta', value: 'HIGH' },
+  { label: 'Media', value: 'MEDIUM' },
+  { label: 'Baja', value: 'LOW' },
+];
+
 function resetForm() {
   form.name = '';
   form.targetAmount = 1000;
@@ -70,6 +77,7 @@ function resetForm() {
   form.targetDate = '';
   form.color = '#10B981';
   form.icon = 'i-heroicons-shield-check';
+  form.priority = 'MEDIUM';
   errorMessage.value = null;
 }
 
@@ -85,6 +93,7 @@ watch(
         form.targetDate = props.goal.targetDate ? props.goal.targetDate.slice(0, 10) : '';
         form.color = props.goal.color || '#10B981';
         form.icon = props.goal.icon || 'i-heroicons-shield-check';
+        form.priority = (props.goal.priority as GoalPriority) || 'MEDIUM';
       } else {
         resetForm();
       }
@@ -121,6 +130,7 @@ function handleSubmit() {
         targetDate: form.targetDate ? form.targetDate : null,
         color: form.color,
         icon: form.icon,
+        priority: form.priority,
       });
     } else {
       emit('created', {
@@ -131,6 +141,7 @@ function handleSubmit() {
         targetDate: form.targetDate ? form.targetDate : null,
         color: form.color,
         icon: form.icon,
+        priority: form.priority,
       });
     }
     handleClose();
@@ -217,13 +228,23 @@ function handleSubmit() {
             </div>
           </div>
 
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Icono</label>
-            <USelect
-              v-model="form.icon"
-              :items="iconOptions"
-              class="w-full"
-            />
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Icono</label>
+              <USelect
+                v-model="form.icon"
+                :items="iconOptions"
+                class="w-full"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Prioridad</label>
+              <USelect
+                v-model="form.priority"
+                :items="priorityOptions"
+                class="w-full"
+              />
+            </div>
           </div>
 
           <div>

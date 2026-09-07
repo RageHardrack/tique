@@ -1,3 +1,11 @@
+export type GoalPriority = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export const PRIORITY_ORDER: Record<GoalPriority, number> = {
+  HIGH: 1,
+  MEDIUM: 2,
+  LOW: 3,
+};
+
 export interface SavingsGoal {
   id: string;
   userId: string;
@@ -8,6 +16,7 @@ export interface SavingsGoal {
   targetDate: string | null;
   color: string | null;
   icon: string | null;
+  priority: GoalPriority;
   isCompleted: boolean;
   createdAt: string;
   updatedAt: string;
@@ -22,6 +31,7 @@ export interface CreateGoalInput {
   targetDate?: string | null;
   color?: string | null;
   icon?: string | null;
+  priority?: GoalPriority;
 }
 
 export interface UpdateGoalInput {
@@ -32,5 +42,7 @@ export interface UpdateGoalInput {
   targetDate?: string | null;
   color?: string | null;
   icon?: string | null;
+  priority?: GoalPriority;
   isCompleted?: boolean;
 }
+

@@ -211,6 +211,7 @@ describe('Exhaustive DELETE Operations Suite - Store & API Integration', () => {
           targetDate: null,
           color: null,
           icon: null,
+          priority: 'MEDIUM' as const,
           isCompleted: false,
           createdAt: '',
           updatedAt: '',
