@@ -184,9 +184,16 @@ export const useExchangeRateStore = defineStore('exchangeRates', () => {
     amount: number,
     fromCurrency: string,
     toCurrency?: string,
+    exchangeRate?: number | null,
   ): number {
     const target = (toCurrency || baseCurrency.value) as SupportedCurrency;
-    return CurrencyConverter.convert(amount, fromCurrency, target, rates.value);
+    return CurrencyConverter.convertTransaction(
+      amount,
+      fromCurrency,
+      target,
+      exchangeRate,
+      rates.value,
+    );
   }
 
   return {

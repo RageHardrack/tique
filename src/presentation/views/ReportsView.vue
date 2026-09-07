@@ -81,8 +81,19 @@ const periodTransactions = computed(() => {
   });
 });
 
-function convertAmount(amount: number, from: string, to: any): number {
-  return CurrencyConverter.convert(amount, from, to, rateStore.rates);
+function convertAmount(
+  amount: number,
+  from: string,
+  to: any,
+  exchangeRate?: number | null,
+): number {
+  return CurrencyConverter.convertTransaction(
+    amount,
+    from,
+    to,
+    exchangeRate,
+    rateStore.rates,
+  );
 }
 
 function formatAmount(amount: number, currency: string): string {
@@ -101,7 +112,12 @@ const metrics = computed(() => {
 
   periodTransactions.value.forEach((tx) => {
     const sourceCurr = accountsCurrencyMap.value[tx.accountId] || 'USD';
-    const converted = convertAmount(tx.amount, sourceCurr, rateStore.baseCurrency);
+    const converted = convertAmount(
+      tx.amount,
+      sourceCurr,
+      rateStore.baseCurrency,
+      tx.exchangeRate,
+    );
 
     if (tx.type === 'INCOME') {
       income += converted;
@@ -141,8 +157,8 @@ function handleExportCsv() {
     accounts: accountStore.accounts,
     categories: categoryStore.categories,
     baseCurrency: rateStore.baseCurrency,
-    convertFn: (amount, fromCurrency) =>
-      convertAmount(amount, fromCurrency, rateStore.baseCurrency),
+    convertFn: (amount, fromCurrency, exchangeRate) =>
+      convertAmount(amount, fromCurrency, rateStore.baseCurrency, exchangeRate),
   });
 
   const startSlug = DateRangeService.toInputDateString(currentRange.value.startDate);

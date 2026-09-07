@@ -102,4 +102,42 @@ describe('CsvExportService', () => {
       '"Line 1\nLine 2"',
     );
   });
+
+  it('should pass transaction exchangeRate to convertFn for converted amount column', () => {
+    const historicalTx: Transaction = {
+      id: 'tx-ves',
+      userId: 'user-1',
+      accountId: 'acc-ves',
+      amount: 27941.41,
+      exchangeRate: 798.33,
+      type: 'EXPENSE',
+      date: '2026-09-01T12:00:00Z',
+      note: 'Wave Internet',
+      createdAt: '2026-09-01',
+      updatedAt: '2026-09-01',
+    };
+
+    const vesAccount: Account = {
+      id: 'acc-ves',
+      userId: 'user-1',
+      name: 'Banesco',
+      type: 'CHECKING',
+      balance: 50000,
+      currency: 'VES',
+      createdAt: '2026-01-01',
+      updatedAt: '2026-01-01',
+    };
+
+    const csv = CsvExportService.generateCsv({
+      transactions: [historicalTx],
+      accounts: [vesAccount],
+      categories: [],
+      baseCurrency: 'USD',
+      convertFn: (amount, _curr, rate) => (rate ? amount / rate : amount),
+    });
+
+    const lines = csv.split('\n');
+    expect(lines.length).toBe(2);
+    expect(lines[1]).toContain('27941.41,VES,35.00,Wave Internet');
+  });
 });

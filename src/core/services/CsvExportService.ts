@@ -7,7 +7,11 @@ export interface CsvExportOptions {
   accounts: Account[];
   categories: Category[];
   baseCurrency: string;
-  convertFn?: (amount: number, fromCurrency: string) => number;
+  convertFn?: (
+    amount: number,
+    fromCurrency: string,
+    exchangeRate?: number | null,
+  ) => number;
 }
 
 export class CsvExportService {
@@ -59,7 +63,7 @@ export class CsvExportService {
         : '';
 
       const convertedAmount = convertFn
-        ? convertFn(tx.amount, currency).toFixed(2)
+        ? convertFn(tx.amount, currency, tx.exchangeRate).toFixed(2)
         : tx.amount.toFixed(2);
 
       return [

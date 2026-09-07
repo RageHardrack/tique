@@ -153,7 +153,15 @@ const totalIncomeConverted = computed(() => {
     .filter((tx) => tx.type === 'INCOME')
     .reduce((sum, tx) => {
       const curr = accountsCurrencyMap.value[tx.accountId] || 'USD';
-      return sum + rateStore.convert(tx.amount, curr);
+      return (
+        sum +
+        rateStore.convert(
+          tx.amount,
+          curr,
+          rateStore.baseCurrency,
+          tx.exchangeRate,
+        )
+      );
     }, 0);
 });
 
@@ -170,7 +178,15 @@ const totalExpensesConverted = computed(() => {
     .filter((tx) => tx.type === 'EXPENSE')
     .reduce((sum, tx) => {
       const curr = accountsCurrencyMap.value[tx.accountId] || 'USD';
-      return sum + rateStore.convert(tx.amount, curr);
+      return (
+        sum +
+        rateStore.convert(
+          tx.amount,
+          curr,
+          rateStore.baseCurrency,
+          tx.exchangeRate,
+        )
+      );
     }, 0);
 });
 
@@ -187,7 +203,8 @@ const categoryBreakdown = computed(() => {
     transactions: transactionStore.transactions,
     categories: categoryStore.categories,
     accountsCurrencyMap: accountsCurrencyMap.value,
-    convertFn: (amount, from, to) => rateStore.convert(amount, from, to),
+    convertFn: (amount, from, to, rate) =>
+      rateStore.convert(amount, from, to, rate),
     targetCurrency: rateStore.baseCurrency,
     formatFn: (amount, curr) => CurrencyFormatter.format(amount, curr),
   });

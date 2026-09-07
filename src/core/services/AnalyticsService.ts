@@ -52,6 +52,7 @@ export class AnalyticsService {
       amount: number,
       fromCurrency: string,
       toCurrency: SupportedCurrency,
+      exchangeRate?: number | null,
     ) => number;
     targetCurrency: SupportedCurrency;
     formatFn: (amount: number, currency: string) => string;
@@ -87,6 +88,7 @@ export class AnalyticsService {
         tx.amount,
         sourceCurrency,
         targetCurrency,
+        tx.exchangeRate,
       );
 
       categoryTotals.set(
@@ -163,6 +165,7 @@ export class AnalyticsService {
       amount: number,
       fromCurrency: string,
       toCurrency: SupportedCurrency,
+      exchangeRate?: number | null,
     ) => number;
     targetCurrency: SupportedCurrency;
   }): PeriodicTrendPoint[] {
@@ -190,7 +193,12 @@ export class AnalyticsService {
 
       const entry = monthMap.get(key)!;
       const sourceCurrency = accountsCurrencyMap[tx.accountId] || 'USD';
-      const converted = convertFn(tx.amount, sourceCurrency, targetCurrency);
+      const converted = convertFn(
+        tx.amount,
+        sourceCurrency,
+        targetCurrency,
+        tx.exchangeRate,
+      );
 
       if (tx.type === 'INCOME') {
         entry.income += converted;

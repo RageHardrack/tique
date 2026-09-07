@@ -120,4 +120,83 @@ describe('AnalyticsService', () => {
     expect(metrics.savingsRate).toBe(-60); // (-300 / 500) * 100
     expect(metrics.isPositive).toBe(false);
   });
+
+  it('should pass transaction exchangeRate to convertFn and preserve historical purchasing power in category breakdown', () => {
+    const historicalTx: Transaction = {
+      id: 'tx-ves',
+      userId: 'user-1',
+      accountId: 'acc-ves',
+      categoryId: 'cat-2',
+      amount: 27941.41,
+      exchangeRate: 798.33,
+      type: 'EXPENSE',
+      date: '2026-09-01',
+      createdAt: '2026-09-01',
+      updatedAt: '2026-09-01',
+    };
+
+    const convertCalls: any[] = [];
+    const convertFn = (
+      amount: number,
+      from: string,
+      to: any,
+      rate?: number | null,
+    ) => {
+      convertCalls.push({ amount, from, to, rate });
+      if (rate) return Number((amount / rate).toFixed(2));
+      return amount;
+    };
+
+    const breakdown = AnalyticsService.calculateCategoryExpenses({
+      transactions: [historicalTx],
+      categories: mockCategories,
+      accountsCurrencyMap: { 'acc-ves': 'VES' },
+      convertFn,
+      targetCurrency: 'USD',
+      formatFn: simpleFormatFn,
+    });
+
+    expect(convertCalls).toHaveLength(1);
+    expect(convertCalls[0].rate).toBe(798.33);
+    expect(breakdown[0].amount).toBe(35);
+  });
+
+  it('should pass transaction exchangeRate to convertFn in periodic trends', () => {
+    const historicalTxs: Transaction[] = [
+      {
+        id: 'tx-ves-1',
+        userId: 'user-1',
+        accountId: 'acc-ves',
+        amount: 27941.41,
+        exchangeRate: 798.33,
+        type: 'EXPENSE',
+        date: '2026-09-01T10:00:00Z',
+        createdAt: '2026-09-01',
+        updatedAt: '2026-09-01',
+      },
+    ];
+
+    const convertCalls: any[] = [];
+    const convertFn = (
+      amount: number,
+      from: string,
+      to: any,
+      rate?: number | null,
+    ) => {
+      convertCalls.push({ amount, from, to, rate });
+      if (rate) return Number((amount / rate).toFixed(2));
+      return amount;
+    };
+
+    const trends = AnalyticsService.calculatePeriodicTrends({
+      transactions: historicalTxs,
+      accountsCurrencyMap: { 'acc-ves': 'VES' },
+      convertFn,
+      targetCurrency: 'USD',
+    });
+
+    expect(convertCalls).toHaveLength(1);
+    expect(convertCalls[0].rate).toBe(798.33);
+    expect(trends[0].expenses).toBe(35);
+  });
 });
