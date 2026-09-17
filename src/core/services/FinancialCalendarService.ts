@@ -1,6 +1,6 @@
 import type { Subscription } from '../entities/Subscription';
 import type { Loan } from '../entities/Loan';
-import type { Account } from '../entities/Account';
+import type { Account, SupportedCurrency } from '../entities/Account';
 
 export type CalendarEventType =
   | 'SUBSCRIPTION'
@@ -66,8 +66,23 @@ export class FinancialCalendarService {
     loans?: Loan[];
     accounts?: Account[];
     today?: Date;
+    targetCurrency?: SupportedCurrency | string;
+    convertFn?: (
+      amount: number,
+      from: string,
+      to: SupportedCurrency | string,
+    ) => number;
   }): MonthCalendarData {
-    const { year, month, subscriptions = [], loans = [], accounts = [], today = new Date() } = params;
+    const {
+      year,
+      month,
+      subscriptions = [],
+      loans = [],
+      accounts = [],
+      today = new Date(),
+      targetCurrency,
+      convertFn,
+    } = params;
 
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const lastDayOfMonth = new Date(year, month, 0);
@@ -175,9 +190,19 @@ export class FinancialCalendarService {
 
       let dayTotal = 0;
       for (const ev of dayEvents) {
-        if (ev.amount && (ev.type === 'SUBSCRIPTION' || (ev.type === 'LOAN_PAYMENT' && ev.isPayable) || ev.type === 'CREDIT_CARD_PAYMENT')) {
-          dayTotal += ev.amount;
-          totalProjectedExpenses += ev.amount;
+        if (
+          ev.amount &&
+          (ev.type === 'SUBSCRIPTION' ||
+            (ev.type === 'LOAN_PAYMENT' && ev.isPayable) ||
+            ev.type === 'CREDIT_CARD_PAYMENT')
+        ) {
+          const effectiveAmount =
+            convertFn && targetCurrency && ev.currency
+              ? convertFn(ev.amount, ev.currency, targetCurrency)
+              : ev.amount;
+
+          dayTotal += effectiveAmount;
+          totalProjectedExpenses += effectiveAmount;
         }
         if (ev.status === 'PENDING' || ev.status === 'OVERDUE') {
           totalPendingCount++;

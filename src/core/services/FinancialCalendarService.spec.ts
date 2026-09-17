@@ -87,4 +87,54 @@ describe('FinancialCalendarService', () => {
 
     expect(data.totalProjectedExpenses).toBe(15.99 + 45.0 + 120.0);
   });
+
+  it('converts multi-currency events to target base currency when convertFn is provided', () => {
+    const multiSub: Subscription[] = [
+      {
+        id: 'sub-usd-1',
+        userId: 'u1',
+        name: 'CleanMyMac',
+        accountId: 'acc-1',
+        amount: 53.4,
+        currency: 'USD',
+        frequency: 'YEARLY',
+        nextDueDate: '2026-09-24T00:00:00.000Z',
+        isActive: true,
+        createdAt: '2026-01-01',
+        updatedAt: '2026-01-01',
+      },
+      {
+        id: 'sub-usd-2',
+        userId: 'u1',
+        name: 'AlDente Pro',
+        accountId: 'acc-1',
+        amount: 11.99,
+        currency: 'USD',
+        frequency: 'YEARLY',
+        nextDueDate: '2026-09-24T00:00:00.000Z',
+        isActive: true,
+        createdAt: '2026-01-01',
+        updatedAt: '2026-01-01',
+      },
+    ];
+
+    // Rate: 1 USD = 3.356 PEN
+    const mockConvert = (amt: number, from: string, to: string) => {
+      if (from === 'USD' && to === 'PEN') return amt * 3.356;
+      return amt;
+    };
+
+    const data = FinancialCalendarService.generateMonthData({
+      year: 2026,
+      month: 9,
+      subscriptions: multiSub,
+      targetCurrency: 'PEN',
+      convertFn: mockConvert,
+    });
+
+    const day24 = data.days.find((d) => d.dayNumber === 24);
+    // (53.40 + 11.99) * 3.356 = 65.39 * 3.356 = 219.44884 -> 219.45
+    expect(day24?.totalAmountDue).toBe(219.45);
+    expect(data.totalProjectedExpenses).toBe(219.45);
+  });
 });

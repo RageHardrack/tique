@@ -15,6 +15,7 @@ import type {
   Subscription,
   SubscriptionDisplayItem,
 } from '../../../core/entities/Subscription';
+import { useExchangeRateStore } from '../../store/exchange-rates';
 
 interface Props {
   subscriptions: Subscription[];
@@ -113,6 +114,8 @@ const categoriesMap = computed(() => {
   return map;
 });
 
+const rateStore = useExchangeRateStore();
+
 const displayItems = computed<SubscriptionDisplayItem[]>(() => {
   return props.subscriptions.map((s) => {
     const accountName = accountsMap.value[s.accountId] || 'Cuenta';
@@ -129,6 +132,20 @@ const displayItems = computed<SubscriptionDisplayItem[]>(() => {
 
     const formattedDueDate = DateFormatter.format(s.nextDueDate, 'D MMM');
 
+    const isDifferentCurrency = s.currency !== props.baseCurrency;
+    let formattedConvertedAmount: string | null = null;
+    if (isDifferentCurrency) {
+      const converted = rateStore.convert(
+        s.amount,
+        s.currency,
+        props.baseCurrency,
+      );
+      formattedConvertedAmount = CurrencyFormatter.format(
+        converted,
+        props.baseCurrency,
+      );
+    }
+
     return {
       subscription: s,
       accountName,
@@ -136,6 +153,7 @@ const displayItems = computed<SubscriptionDisplayItem[]>(() => {
       categoryIcon: category?.icon || 'i-heroicons-arrow-path',
       categoryColor: category?.color || '#3B82F6',
       formattedAmount: CurrencyFormatter.format(s.amount, s.currency),
+      formattedConvertedAmount,
       formattedDueDate,
       daysRemaining: days,
       urgencyStatus,
@@ -264,20 +282,28 @@ function handleDelete(id: string) {
 
           <!-- Amount and Frequency Badge -->
           <div class="mt-3 flex items-center justify-between">
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-black text-slate-900 dark:text-white">
-                {{ item.formattedAmount }}
-              </span>
-              <span
-                class="text-xs font-semibold text-slate-500 dark:text-slate-400"
+            <div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg font-black text-slate-900 dark:text-white">
+                  {{ item.formattedAmount }}
+                </span>
+                <span
+                  class="text-xs font-semibold text-slate-500 dark:text-slate-400"
+                >
+                  {{
+                    getFrequencyLabel(
+                      item.subscription.frequency,
+                      item.subscription.customIntervalDays,
+                    )
+                  }}
+                </span>
+              </div>
+              <p
+                v-if="item.formattedConvertedAmount"
+                class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5"
               >
-                {{
-                  getFrequencyLabel(
-                    item.subscription.frequency,
-                    item.subscription.customIntervalDays,
-                  )
-                }}
-              </span>
+                ≈ {{ item.formattedConvertedAmount }}
+              </p>
             </div>
 
             <UBadge

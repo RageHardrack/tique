@@ -1,8 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
 import { mount } from '@vue/test-utils';
 import FinancialCalendar from './FinancialCalendar.vue';
 
 describe('FinancialCalendar.vue - Canonical 7-Day Responsive Grid', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
   const defaultMountOptions = {
     props: {
       subscriptions: [

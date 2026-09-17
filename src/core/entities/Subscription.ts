@@ -31,6 +31,7 @@ export interface SubscriptionDisplayItem {
   categoryIcon?: string;
   categoryColor?: string;
   formattedAmount: string;
+  formattedConvertedAmount?: string | null;
   formattedDueDate: string;
   daysRemaining: number;
   urgencyStatus: 'DUE_TODAY' | 'DUE_SOON' | 'OVERDUE' | 'NORMAL';

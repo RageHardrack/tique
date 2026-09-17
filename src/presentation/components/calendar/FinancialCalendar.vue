@@ -7,7 +7,8 @@ import {
 import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
 import type { Subscription } from '../../../core/entities/Subscription';
 import type { Loan } from '../../../core/entities/Loan';
-import type { Account } from '../../../core/entities/Account';
+import type { Account, SupportedCurrency } from '../../../core/entities/Account';
+import { useExchangeRateStore } from '../../store/exchange-rates';
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
@@ -39,6 +40,8 @@ const firstDayOffset = computed(() => {
   return (day + 6) % 7;
 });
 
+const rateStore = useExchangeRateStore();
+
 const calendarData = computed<MonthCalendarData>(() => {
   return FinancialCalendarService.generateMonthData({
     year: currentYear.value,
@@ -47,6 +50,9 @@ const calendarData = computed<MonthCalendarData>(() => {
     loans: props.loans,
     accounts: props.accounts,
     today: currentDate,
+    targetCurrency: props.baseCurrency as SupportedCurrency,
+    convertFn: (amt, from, to) =>
+      rateStore.convert(amt, from, to as SupportedCurrency),
   });
 });
 
@@ -286,6 +292,12 @@ defineExpose({
             <p v-if="event.subtitle" class="text-[10px] text-slate-400 truncate">{{ event.subtitle }}</p>
             <p v-if="event.amount" class="text-xs font-black text-slate-900 dark:text-white">
               {{ format(event.amount, event.currency) }}
+              <span
+                v-if="event.currency && event.currency !== baseCurrency"
+                class="text-[10px] font-medium text-slate-500 dark:text-slate-400 ml-1"
+              >
+                (≈ {{ format(rateStore.convert(event.amount, event.currency, baseCurrency as SupportedCurrency), baseCurrency) }})
+              </span>
             </p>
           </div>
 
@@ -371,6 +383,12 @@ defineExpose({
                 <p v-if="event.subtitle" class="text-[10px] text-slate-400 truncate">{{ event.subtitle }}</p>
                 <p v-if="event.amount" class="text-xs font-black text-slate-900 dark:text-white">
                   {{ format(event.amount, event.currency) }}
+                  <span
+                    v-if="event.currency && event.currency !== baseCurrency"
+                    class="text-[10px] font-medium text-slate-500 dark:text-slate-400 ml-1"
+                  >
+                    (≈ {{ format(rateStore.convert(event.amount, event.currency, baseCurrency as SupportedCurrency), baseCurrency) }})
+                  </span>
                 </p>
               </div>
 
