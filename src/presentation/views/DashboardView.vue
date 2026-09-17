@@ -6,22 +6,22 @@ import { RouterLink } from 'vue-router';
 import { useAuthStore } from '../store/auth';
 import AppLayout from '../layouts/AppLayout.vue';
 import { useBudgetStore } from '../store/budgets';
+import { useLoanStore } from '../store/loan.store';
 import { useAccountStore } from '../store/accounts';
+import { useConfirm } from '../composables/useConfirm';
 import { useCategoryStore } from '../store/categories';
 import { useTransactionStore } from '../store/transactions';
 import { useSubscriptionStore } from '../store/subscriptions';
-import { useLoanStore } from '../store/loan.store';
 import { useExchangeRateStore } from '../store/exchange-rates';
+import { ReminderService } from '../../core/services/ReminderService';
 import type { TransactionType } from '../../core/entities/Transaction';
 import { AnalyticsService } from '../../core/services/AnalyticsService';
 import { CurrencyFormatter } from '../../core/services/CurrencyFormatter';
-import { ReminderService } from '../../core/services/ReminderService';
-import { useConfirm } from '../composables/useConfirm';
 import TransactionItem from '../components/transactions/TransactionItem.vue';
 import CategoryDonutChart from '../components/analytics/CategoryDonutChart.vue';
 import CashflowSummaryCard from '../components/analytics/CashflowSummaryCard.vue';
-import CreateTransactionModal from '../components/transactions/CreateTransactionModal.vue';
 import UrgentRemindersBanner from '../components/dashboard/UrgentRemindersBanner.vue';
+import CreateTransactionModal from '../components/transactions/CreateTransactionModal.vue';
 
 const authStore = useAuthStore();
 const accountStore = useAccountStore();
@@ -75,13 +75,22 @@ const totalAssetsConverted = computed(() => {
   const accountsAssets = accountStore.accounts
     .filter((acc) => acc.type !== 'CREDIT_CARD')
     .reduce((sum, acc) => {
-      return sum + Math.max(0, rateStore.convert(acc.balance || 0, acc.currency || 'USD'));
+      return (
+        sum +
+        Math.max(0, rateStore.convert(acc.balance || 0, acc.currency || 'USD'))
+      );
     }, 0);
 
   const lentLoansAssets = loanStore.loans
     .filter((l) => l.type === 'LENT' && l.status !== 'PAID')
     .reduce((sum, l) => {
-      return sum + Math.max(0, rateStore.convert(l.remainingAmount || 0, l.currency || 'USD'));
+      return (
+        sum +
+        Math.max(
+          0,
+          rateStore.convert(l.remainingAmount || 0, l.currency || 'USD'),
+        )
+      );
     }, 0);
 
   return Math.round((accountsAssets + lentLoansAssets) * 100) / 100;
@@ -92,13 +101,22 @@ const totalLiabilitiesConverted = computed(() => {
   const creditCardDebt = accountStore.accounts
     .filter((acc) => acc.type === 'CREDIT_CARD')
     .reduce((sum, acc) => {
-      return sum + Math.max(0, rateStore.convert(acc.balance || 0, acc.currency || 'USD'));
+      return (
+        sum +
+        Math.max(0, rateStore.convert(acc.balance || 0, acc.currency || 'USD'))
+      );
     }, 0);
 
   const borrowedDebt = loanStore.loans
     .filter((l) => l.type === 'BORROWED' && l.status !== 'PAID')
     .reduce((sum, l) => {
-      return sum + Math.max(0, rateStore.convert(l.remainingAmount || 0, l.currency || 'USD'));
+      return (
+        sum +
+        Math.max(
+          0,
+          rateStore.convert(l.remainingAmount || 0, l.currency || 'USD'),
+        )
+      );
     }, 0);
 
   return Math.round((creditCardDebt + borrowedDebt) * 100) / 100;
@@ -106,7 +124,11 @@ const totalLiabilitiesConverted = computed(() => {
 
 // Real Net Worth (Total Assets - Total Liabilities)
 const totalNetWorthConverted = computed(() => {
-  return Math.round((totalAssetsConverted.value - totalLiabilitiesConverted.value) * 100) / 100;
+  return (
+    Math.round(
+      (totalAssetsConverted.value - totalLiabilitiesConverted.value) * 100,
+    ) / 100
+  );
 });
 
 // Credit Card Available Liquidity
@@ -299,7 +321,8 @@ async function handleDeleteTx(id: string) {
 }
 
 const categoriesDetailsMap = computed(() => {
-  const map: Record<string, { name: string; icon?: string; color?: string }> = {};
+  const map: Record<string, { name: string; icon?: string; color?: string }> =
+    {};
   categoryStore.categories.forEach((cat) => {
     map[cat.id] = {
       name: cat.name,
@@ -370,11 +393,19 @@ async function handlePaySubscription(subscriptionId: string) {
               {{ formattedTotalNetWorth }}
             </h3>
             <!-- Assets vs Liabilities breakdown -->
-            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] font-medium">
-              <span class="text-emerald-600 dark:text-emerald-400 truncate" :title="'Activos: ' + formattedTotalAssets">
+            <div
+              class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] font-medium"
+            >
+              <span
+                class="text-emerald-600 dark:text-emerald-400 truncate"
+                :title="'Activos: ' + formattedTotalAssets"
+              >
                 Activos: {{ formattedTotalAssets }}
               </span>
-              <span class="text-rose-600 dark:text-rose-400 truncate" :title="'Deudas / Tarjetas: ' + formattedTotalLiabilities">
+              <span
+                class="text-rose-600 dark:text-rose-400 truncate"
+                :title="'Deudas / Tarjetas: ' + formattedTotalLiabilities"
+              >
                 Deudas: {{ formattedTotalLiabilities }}
               </span>
             </div>
@@ -382,8 +413,14 @@ async function handlePaySubscription(subscriptionId: string) {
               v-if="totalCreditCardAvailableConverted > 0"
               class="text-[10px] text-slate-400 dark:text-slate-500 font-medium flex items-center gap-1"
             >
-              <UIcon name="i-heroicons-credit-card" class="w-3 h-3 text-amber-500" />
-              <span>Línea disp. en tarjetas: {{ formattedTotalCreditCardAvailable }}</span>
+              <UIcon
+                name="i-heroicons-credit-card"
+                class="w-3 h-3 text-amber-500"
+              />
+              <span
+                >Línea disp. en tarjetas:
+                {{ formattedTotalCreditCardAvailable }}</span
+              >
             </div>
           </div>
         </div>
@@ -448,17 +485,19 @@ async function handlePaySubscription(subscriptionId: string) {
       </div>
 
       <!-- Analytics Charts Section -->
-      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div class="lg:col-span-7">
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div class="lg:col-span-7 flex flex-col">
           <CategoryDonutChart
             :breakdown="categoryBreakdown"
             :base-currency="rateStore.baseCurrency"
+            class="h-full"
           />
         </div>
-        <div class="lg:col-span-5">
+        <div class="lg:col-span-5 flex flex-col">
           <CashflowSummaryCard
             :metrics="cashflowMetrics"
             :base-currency="rateStore.baseCurrency"
+            class="h-full"
           />
         </div>
       </section>
