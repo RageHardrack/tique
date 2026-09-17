@@ -2,9 +2,9 @@
 import { computed, ref } from 'vue';
 
 import TransactionItem from './TransactionItem.vue';
+import ImportStatementModal from './ImportStatementModal.vue';
 import type { Category } from '../../../core/entities/Category';
 import CreateTransactionModal from './CreateTransactionModal.vue';
-import ImportStatementModal from './ImportStatementModal.vue';
 import { CsvExportService } from '../../../core/services/CsvExportService';
 import type {
   Account,
@@ -349,6 +349,7 @@ function handleDelete(id: string) {
           class="bg-slate-50 dark:bg-[#0f1523] border border-slate-200 dark:border-[#283a59] rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none"
         >
           <option value="">Todas las categorías</option>
+          <option value="UNCATEGORIZED">General / Sin categoría</option>
           <option v-for="cat in categories" :key="cat.id" :value="cat.id">
             {{ cat.name }}
           </option>

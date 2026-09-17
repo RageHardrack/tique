@@ -52,7 +52,11 @@ export class TransactionFilterService {
 
       // 3. Category Filter
       if (criteria.categoryId) {
-        if (tx.categoryId !== criteria.categoryId) return false;
+        if (criteria.categoryId === 'UNCATEGORIZED') {
+          if (tx.categoryId) return false;
+        } else {
+          if (tx.categoryId !== criteria.categoryId) return false;
+        }
       }
 
       // 4. Date Preset Filter
@@ -105,7 +109,7 @@ export class TransactionFilterService {
           destAccountName.includes(searchLower);
         const categoryName = tx.categoryId
           ? categoriesMap.get(tx.categoryId) || ''
-          : '';
+          : 'general / sin categoría sin categoria';
         const categoryMatch = categoryName.includes(searchLower);
 
         if (!noteMatch && !amountMatch && !accountMatch && !categoryMatch) {

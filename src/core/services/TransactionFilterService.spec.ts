@@ -153,4 +153,33 @@ describe('TransactionFilterService', () => {
     );
     expect(thisMonth.length).toBe(2);
   });
+
+  it('should filter by uncategorized transactions when categoryId is UNCATEGORIZED', () => {
+    const uncategorized = TransactionFilterService.filter(
+      transactions,
+      { categoryId: 'UNCATEGORIZED' },
+      accounts,
+      categories,
+    );
+    expect(uncategorized.length).toBe(1);
+    expect(uncategorized[0].id).toBe('tx-3');
+  });
+
+  it('should match uncategorized transactions when searching for "sin categoría" or "general"', () => {
+    const searchSinCat = TransactionFilterService.filter(
+      transactions,
+      { searchTerm: 'sin categoría' },
+      accounts,
+      categories,
+    );
+    expect(searchSinCat.some((tx) => tx.id === 'tx-3')).toBe(true);
+
+    const searchGeneral = TransactionFilterService.filter(
+      transactions,
+      { searchTerm: 'general' },
+      accounts,
+      categories,
+    );
+    expect(searchGeneral.some((tx) => tx.id === 'tx-3')).toBe(true);
+  });
 });
