@@ -4,10 +4,15 @@ import AppLayout from '../layouts/AppLayout.vue';
 import GoalCard from '../components/goals/GoalCard.vue';
 import CreateGoalModal from '../components/goals/CreateGoalModal.vue';
 import DepositGoalModal from '../components/goals/DepositGoalModal.vue';
+import SavingsCapacityCalculator from '../components/goals/SavingsCapacityCalculator.vue';
 import { useGoalStore } from '../store/goals';
 import { useAccountStore } from '../store/accounts';
 import { useAuthStore } from '../store/auth';
 import { useExchangeRateStore } from '../store/exchange-rates';
+import { useSubscriptionStore } from '../store/subscriptions';
+import { useBudgetStore } from '../store/budgets';
+import { useLoanStore } from '../store/loan.store';
+import { useTransactionStore } from '../store/transactions';
 import type { CreateGoalInput, GoalPriority, SavingsGoal, UpdateGoalInput } from '../../core/entities/Goal';
 import { PRIORITY_ORDER } from '../../core/entities/Goal';
 import { useConfirm } from '../composables/useConfirm';
@@ -16,6 +21,10 @@ const authStore = useAuthStore();
 const goalStore = useGoalStore();
 const accountStore = useAccountStore();
 const rateStore = useExchangeRateStore();
+const subscriptionStore = useSubscriptionStore();
+const budgetStore = useBudgetStore();
+const loanStore = useLoanStore();
+const transactionStore = useTransactionStore();
 const { confirm: confirmDialog } = useConfirm();
 
 const isCreateModalOpen = ref(false);
@@ -38,8 +47,36 @@ onMounted(async () => {
     await Promise.all([
       goalStore.fetchGoals(authStore.user.id),
       accountStore.fetchAccounts(authStore.user.id),
+      subscriptionStore.fetchSubscriptions(authStore.user.id),
+      budgetStore.fetchBudgets(authStore.user.id),
+      loanStore.fetchLoans(authStore.user.id),
+      transactionStore.fetchTransactions(authStore.user.id),
     ]);
   }
+});
+
+// Compute average monthly income from historical INCOME transactions
+const averageMonthlyIncome = computed(() => {
+  const incomes = transactionStore.transactions.filter((t) => t.type === 'INCOME');
+  if (incomes.length === 0) return 0;
+
+  // Group by year-month
+  const monthlyTotals = new Map<string, number>();
+  incomes.forEach((tx) => {
+    const key = tx.date ? tx.date.slice(0, 7) : 'default';
+    const acc = accountStore.accounts.find((a) => a.id === tx.accountId);
+    const converted = rateStore.convert(
+      tx.amount,
+      acc?.currency || 'USD',
+      rateStore.baseCurrency,
+      tx.exchangeRate,
+    );
+    monthlyTotals.set(key, (monthlyTotals.get(key) || 0) + converted);
+  });
+
+  if (monthlyTotals.size === 0) return 0;
+  const sum = Array.from(monthlyTotals.values()).reduce((a, b) => a + b, 0);
+  return Math.round((sum / monthlyTotals.size) * 100) / 100;
 });
 
 function formatAmount(amount: number, currency: string): string {
@@ -183,6 +220,17 @@ const completedGoals = computed(() => goalStore.goals.filter((g) => g.isComplete
           </div>
         </div>
       </section>
+
+      <!-- Savings Capacity & Purchase Calculator -->
+      <SavingsCapacityCalculator
+        :subscriptions="subscriptionStore.subscriptions"
+        :budgets="budgetStore.budgets"
+        :loans="loanStore.loans"
+        :active-goals="activeGoals"
+        :base-currency="rateStore.baseCurrency"
+        :convert-fn="(amt, from, to) => rateStore.convert(amt, from, to)"
+        :average-historical-income="averageMonthlyIncome"
+      />
 
       <!-- Active Goals Grid -->
       <section class="space-y-4">
