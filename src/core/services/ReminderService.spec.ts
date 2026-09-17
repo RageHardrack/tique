@@ -27,6 +27,11 @@ describe('ReminderService', () => {
       expect(days).toBe(0);
     });
 
+    it('returns 1 when due date is tomorrow even with ISO midnight timestamp', () => {
+      const days = ReminderService.calculateDaysRemaining('2026-08-27T00:00:00.000Z', baseDate);
+      expect(days).toBe(1);
+    });
+
     it('returns positive integer for future dates', () => {
       const days = ReminderService.calculateDaysRemaining('2026-08-29', baseDate);
       expect(days).toBe(3);

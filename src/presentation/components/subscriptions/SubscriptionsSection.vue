@@ -5,6 +5,7 @@ import type { Category } from '../../../core/entities/Category';
 import CreateSubscriptionModal from './CreateSubscriptionModal.vue';
 import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
 import { DateFormatter } from '../../../core/services/DateFormatter';
+import { ReminderService } from '../../../core/services/ReminderService';
 import type {
   Account,
   SupportedCurrency,
@@ -112,17 +113,6 @@ const categoriesMap = computed(() => {
   return map;
 });
 
-function calculateDaysDifference(dueDateString: string): number {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-
-  const due = new Date(dueDateString);
-  due.setHours(0, 0, 0, 0);
-
-  const diffTime = due.getTime() - now.getTime();
-  return Math.round(diffTime / (1000 * 60 * 60 * 24));
-}
-
 const displayItems = computed<SubscriptionDisplayItem[]>(() => {
   return props.subscriptions.map((s) => {
     const accountName = accountsMap.value[s.accountId] || 'Cuenta';
@@ -130,21 +120,12 @@ const displayItems = computed<SubscriptionDisplayItem[]>(() => {
       ? categoriesMap.value[s.categoryId]
       : undefined;
 
-    const days = calculateDaysDifference(s.nextDueDate);
-    let urgencyStatus: 'DUE_TODAY' | 'DUE_SOON' | 'OVERDUE' | 'NORMAL' =
-      'NORMAL';
-    let urgencyBadgeText = `Vence en ${days} días`;
-
-    if (days === 0) {
-      urgencyStatus = 'DUE_TODAY';
-      urgencyBadgeText = 'Vence hoy';
-    } else if (days < 0) {
-      urgencyStatus = 'OVERDUE';
-      urgencyBadgeText = `Venció hace ${Math.abs(days)} días`;
-    } else if (days <= 3) {
-      urgencyStatus = 'DUE_SOON';
-      urgencyBadgeText = `Vence en ${days} días`;
-    }
+    const days = ReminderService.calculateDaysRemaining(s.nextDueDate);
+    const urgencyStatus = ReminderService.evaluateUrgency(days);
+    const urgencyBadgeText = ReminderService.getUrgencyBadgeText(
+      days,
+      urgencyStatus,
+    );
 
     const formattedDueDate = DateFormatter.format(s.nextDueDate, 'D MMM');
 

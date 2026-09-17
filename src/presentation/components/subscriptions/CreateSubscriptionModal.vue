@@ -3,7 +3,8 @@ import { computed, ref, watch } from 'vue';
 
 import type { Category } from '../../../core/entities/Category';
 import type { RecurrenceFrequency, Subscription } from '../../../core/entities/Subscription';
-import { SUPPORTED_CURRENCIES } from '../../../core/services/CurrencyFormatter';
+import { CurrencyFormatter, SUPPORTED_CURRENCIES } from '../../../core/services/CurrencyFormatter';
+import { DateFormatter } from '../../../core/services/DateFormatter';
 import SearchableSelect from '../base/SearchableSelect.vue';
 import type {
   Account,
@@ -108,8 +109,7 @@ const frequencyOptions = [
 
 // Set default date to today in YYYY-MM-DD
 function getTodayDateString(): string {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
+  return DateFormatter.toInputDate(new Date());
 }
 
 watch(
@@ -124,7 +124,7 @@ watch(
         currency.value = (props.subscription.currency as SupportedCurrency) || props.baseCurrency;
         frequency.value = props.subscription.frequency;
         customIntervalDays.value = props.subscription.customIntervalDays || undefined;
-        nextDueDate.value = new Date(props.subscription.nextDueDate).toISOString().slice(0, 10);
+        nextDueDate.value = DateFormatter.toInputDate(props.subscription.nextDueDate);
       } else {
         name.value = '';
         accountId.value = props.accounts[0]?.id || '';
