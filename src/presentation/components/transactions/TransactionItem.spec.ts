@@ -44,4 +44,22 @@ describe('TransactionItem.vue', () => {
 
     expect(wrapper.text()).not.toContain('Tasa:');
   });
+
+  it('renders cross-currency expense reference when destinationAmount and exchangeRate are present', () => {
+    const wrapper = mount(TransactionItem, {
+      props: {
+        transaction: {
+          ...baseTx,
+          amount: 39,
+          destinationAmount: 12,
+          exchangeRate: 3.25,
+        },
+        accountName: 'Billetera PEN',
+        accountCurrency: 'PEN',
+      },
+    });
+
+    expect(wrapper.text()).toContain('39.00');
+    expect(wrapper.text()).toContain('Ref: 12 (TC: 3.25)');
+  });
 });

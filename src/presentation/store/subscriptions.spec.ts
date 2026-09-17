@@ -116,6 +116,52 @@ describe('useSubscriptionStore', () => {
     expect(store.subscriptions[0].nextDueDate).toBe('2026-09-25');
   });
 
+  it('should support paying subscription with cross-currency payload', async () => {
+    const store = useSubscriptionStore();
+    store.subscriptions = [
+      {
+        id: 'sub-cross',
+        userId: 'user-1',
+        accountId: 'acc-pen',
+        name: 'Netflix',
+        amount: 12,
+        currency: 'USD',
+        frequency: 'MONTHLY',
+        nextDueDate: '2026-09-15',
+        isActive: true,
+        createdAt: '2026-01-01',
+        updatedAt: '2026-01-01',
+      },
+    ];
+
+    const updatedSub = {
+      ...store.subscriptions[0],
+      nextDueDate: '2026-10-15',
+    };
+
+    vi.mocked(ApiClient.post).mockResolvedValueOnce({
+      transactionId: 'tx-cross-1',
+      subscription: updatedSub,
+    });
+
+    const payload = {
+      debitedAmount: 39,
+      exchangeRate: 3.25,
+      destinationAmount: 12,
+      accountId: 'acc-pen',
+      note: 'Pago recurrente: Netflix ($12.00 USD @ 3.25)',
+    };
+
+    const res = await store.paySubscription('sub-cross', payload);
+
+    expect(ApiClient.post).toHaveBeenCalledWith(
+      '/subscriptions/sub-cross/pay',
+      payload,
+    );
+    expect(res.transactionId).toBe('tx-cross-1');
+    expect(store.subscriptions[0].nextDueDate).toBe('2026-10-15');
+  });
+
   it('should support creating a custom frequency subscription with customIntervalDays', async () => {
     const customSub = {
       id: 'sub-custom-1',

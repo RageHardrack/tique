@@ -22,6 +22,8 @@ import CategoryDonutChart from '../components/analytics/CategoryDonutChart.vue';
 import CashflowSummaryCard from '../components/analytics/CashflowSummaryCard.vue';
 import UrgentRemindersBanner from '../components/dashboard/UrgentRemindersBanner.vue';
 import CreateTransactionModal from '../components/transactions/CreateTransactionModal.vue';
+import PaySubscriptionModal from '../components/subscriptions/PaySubscriptionModal.vue';
+import type { Subscription } from '../../core/entities/Subscription';
 
 const authStore = useAuthStore();
 const accountStore = useAccountStore();
@@ -344,8 +346,33 @@ const urgentReminders = computed(() => {
   });
 });
 
-async function handlePaySubscription(subscriptionId: string) {
-  await subscriptionStore.paySubscription(subscriptionId);
+const isPayModalOpen = ref(false);
+const subscriptionToPay = ref<Subscription | null>(null);
+
+function handlePaySubscription(subscriptionId: string) {
+  const sub = subscriptionStore.subscriptions.find((s) => s.id === subscriptionId);
+  if (!sub) return;
+  subscriptionToPay.value = sub;
+  isPayModalOpen.value = true;
+}
+
+async function handleConfirmPaySubscription(payload: {
+  id: string;
+  debitedAmount?: number;
+  exchangeRate?: number;
+  destinationAmount?: number;
+  accountId?: string;
+  paymentDate?: string;
+  note?: string;
+}) {
+  await subscriptionStore.paySubscription(payload.id, {
+    debitedAmount: payload.debitedAmount,
+    exchangeRate: payload.exchangeRate,
+    destinationAmount: payload.destinationAmount,
+    accountId: payload.accountId,
+    paymentDate: payload.paymentDate,
+    note: payload.note,
+  });
   if (authStore.user?.id) {
     await Promise.all([
       accountStore.fetchAccounts(authStore.user.id),
@@ -701,6 +728,14 @@ async function handlePaySubscription(subscriptionId: string) {
       :categories="categoryStore.categories"
       @created="handleCreateTx"
       @updated="handleUpdateTx"
+    />
+
+    <!-- Pay Subscription Modal -->
+    <PaySubscriptionModal
+      v-model:open="isPayModalOpen"
+      :subscription="subscriptionToPay"
+      :accounts="accountStore.accounts"
+      @pay="handleConfirmPaySubscription"
     />
   </AppLayout>
 </template>

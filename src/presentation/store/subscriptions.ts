@@ -62,14 +62,24 @@ export const useSubscriptionStore = defineStore('subscriptions', () => {
     }
   }
 
-  async function paySubscription(id: string) {
+  async function paySubscription(
+    id: string,
+    payload?: {
+      paymentDate?: string;
+      debitedAmount?: number;
+      exchangeRate?: number;
+      destinationAmount?: number;
+      accountId?: string;
+      note?: string;
+    },
+  ) {
     isLoading.value = true;
     error.value = null;
     try {
       const response = await ApiClient.post<{
         transactionId: string;
         subscription: Subscription;
-      }>(`/subscriptions/${id}/pay`, {});
+      }>(`/subscriptions/${id}/pay`, payload || {});
 
       const idx = subscriptions.value.findIndex((s) => s.id === id);
       if (idx !== -1) {

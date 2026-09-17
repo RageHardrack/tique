@@ -76,6 +76,15 @@ const isCrossCurrencyTransfer = computed(() => {
   );
 });
 
+const isCrossCurrencyExpense = computed(() => {
+  return (
+    props.transaction.type === 'EXPENSE' &&
+    props.transaction.destinationAmount !== undefined &&
+    props.transaction.destinationAmount !== null &&
+    props.transaction.destinationAmount !== props.transaction.amount
+  );
+});
+
 const formattedAmount = computed(() => {
   const formatted = CurrencyFormatter.format(
     props.transaction.amount,
@@ -165,6 +174,12 @@ function handleDelete() {
           class="text-xs font-semibold text-emerald-500 dark:text-emerald-400"
         >
           ➔ {{ formattedDestinationAmount }}
+        </span>
+        <span
+          v-else-if="isCrossCurrencyExpense"
+          class="text-[11px] font-semibold text-sky-600 dark:text-sky-400"
+        >
+          Ref: {{ transaction.destinationAmount }} (TC: {{ transaction.exchangeRate }})
         </span>
         <span
           v-else-if="transaction.exchangeRate"

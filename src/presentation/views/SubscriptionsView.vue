@@ -9,10 +9,11 @@ import { useTransactionStore } from '../store/transactions';
 import { useSubscriptionStore } from '../store/subscriptions';
 import { useLoanStore } from '../store/loan.store';
 import { useExchangeRateStore } from '../store/exchange-rates';
-import type { RecurrenceFrequency } from '../../core/entities/Subscription';
+import type { RecurrenceFrequency, Subscription } from '../../core/entities/Subscription';
 import { useConfirm } from '../composables/useConfirm';
 import SubscriptionsSection from '../components/subscriptions/SubscriptionsSection.vue';
 import FinancialCalendar from '../components/calendar/FinancialCalendar.vue';
+import PaySubscriptionModal from '../components/subscriptions/PaySubscriptionModal.vue';
 
 const authStore = useAuthStore();
 const accountStore = useAccountStore();
@@ -69,24 +70,38 @@ async function handleUpdate(
   await subscriptionStore.updateSubscription(id, payload);
 }
 
-async function handlePay(id: string) {
-  const sub = subscriptionStore.subscriptions.find((s) => s.id === id);
-  const name = sub?.name || 'la suscripción';
-  const confirmed = await confirmDialog({
-    title: 'Registrar pago recurrente',
-    message: `¿Deseas registrar el pago de "${name}"? Se creará el movimiento correspondiente y se actualizará el saldo de la cuenta.`,
-    confirmText: 'Registrar Pago',
-    variant: 'info',
-  });
+const isPayModalOpen = ref(false);
+const subscriptionToPay = ref<Subscription | null>(null);
 
-  if (confirmed) {
-    await subscriptionStore.paySubscription(id);
-    if (authStore.user?.id) {
-      await Promise.all([
-        accountStore.fetchAccounts(authStore.user.id),
-        transactionStore.fetchTransactions(authStore.user.id),
-      ]);
-    }
+function handleOpenPay(id: string) {
+  const sub = subscriptionStore.subscriptions.find((s) => s.id === id);
+  if (!sub) return;
+  subscriptionToPay.value = sub;
+  isPayModalOpen.value = true;
+}
+
+async function handleConfirmPay(payload: {
+  id: string;
+  debitedAmount?: number;
+  exchangeRate?: number;
+  destinationAmount?: number;
+  accountId?: string;
+  paymentDate?: string;
+  note?: string;
+}) {
+  await subscriptionStore.paySubscription(payload.id, {
+    debitedAmount: payload.debitedAmount,
+    exchangeRate: payload.exchangeRate,
+    destinationAmount: payload.destinationAmount,
+    accountId: payload.accountId,
+    paymentDate: payload.paymentDate,
+    note: payload.note,
+  });
+  if (authStore.user?.id) {
+    await Promise.all([
+      accountStore.fetchAccounts(authStore.user.id),
+      transactionStore.fetchTransactions(authStore.user.id),
+    ]);
   }
 }
 
@@ -151,7 +166,7 @@ async function handleDelete(id: string) {
         :is-loading="subscriptionStore.isLoading"
         @create="handleCreate"
         @update="handleUpdate"
-        @pay="handlePay"
+        @pay="handleOpenPay"
         @delete="handleDelete"
       />
 
@@ -162,7 +177,15 @@ async function handleDelete(id: string) {
         :loans="loanStore.loans"
         :accounts="accountStore.accounts"
         :base-currency="rateStore.baseCurrency"
-        @pay-subscription="handlePay"
+        @pay-subscription="handleOpenPay"
+      />
+
+      <!-- Smart Cross-Currency Pay Modal -->
+      <PaySubscriptionModal
+        v-model:open="isPayModalOpen"
+        :subscription="subscriptionToPay"
+        :accounts="accountStore.accounts"
+        @pay="handleConfirmPay"
       />
     </div>
   </AppLayout>
