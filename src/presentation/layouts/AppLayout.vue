@@ -25,7 +25,7 @@ onMounted(() => {
     class="flex min-h-screen bg-[#FAF7F2] dark:bg-[#0B0F19] text-slate-900 dark:text-[#f1f5f9] font-sans antialiased selection:bg-[#1B3E9B]/30"
   >
     <!-- Desktop Sidebar -->
-    <SidebarNav class="hidden md:flex h-screen sticky top-0 shrink-0" />
+    <SidebarNav class="hidden md:flex h-screen sticky top-0 shrink-0 z-20" />
 
     <!-- Main Content Area -->
     <div class="flex-1 flex flex-col min-w-0 pb-20 md:pb-8">

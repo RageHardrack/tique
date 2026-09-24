@@ -6,7 +6,7 @@ const pwaStore = usePwaStore();
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-900 text-slate-100 overflow-x-hidden">
+  <div class="min-h-screen bg-slate-900 text-slate-100 overflow-x-clip">
     <router-view />
     <ConfirmModal />
 
