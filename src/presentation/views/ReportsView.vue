@@ -25,6 +25,7 @@ import { DateFormatter } from '../../core/services/DateFormatter';
 
 import { CsvExportService } from '../../core/services/CsvExportService';
 import { PdfExportService } from '../../core/services/PdfExportService';
+import { MarkdownExportService } from '../../core/services/MarkdownExportService';
 
 const authStore = useAuthStore();
 const accountStore = useAccountStore();
@@ -179,6 +180,26 @@ function handleExportPdf() {
     formatFn: formatAmount,
   });
 }
+
+function handleExportMarkdown() {
+  const markdown = MarkdownExportService.generateMarkdown({
+    rangeLabel: currentRange.value.label,
+    formattedRange: currentRange.value.formattedRange,
+    baseCurrency: rateStore.baseCurrency,
+    metrics: metrics.value,
+    categoryBreakdown: categoryBreakdown.value,
+    transactions: periodTransactions.value,
+    accounts: accountStore.accounts,
+    categories: categoryStore.categories,
+    convertFn: (amount, fromCurrency, exchangeRate) =>
+      convertAmount(amount, fromCurrency, rateStore.baseCurrency, exchangeRate),
+    formatFn: formatAmount,
+  });
+
+  const startSlug = DateRangeService.toInputDateString(currentRange.value.startDate);
+  const endSlug = DateRangeService.toInputDateString(currentRange.value.endDate);
+  MarkdownExportService.downloadMarkdown(markdown, `tique_contexto_ia_${startSlug}_a_${endSlug}.md`);
+}
 </script>
 
 <template>
@@ -215,6 +236,17 @@ function handleExportPdf() {
               @click="handleExportCsv"
             >
               Exportar CSV
+            </UButton>
+
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-heroicons-sparkles"
+              class="font-semibold cursor-pointer min-h-[40px]"
+              :disabled="periodTransactions.length === 0"
+              @click="handleExportMarkdown"
+            >
+              Exportar para IA
             </UButton>
 
             <UButton

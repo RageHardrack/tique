@@ -27,7 +27,7 @@ Se conecta a la API backend **Guilliman** mediante cliente HTTP centralizado (`A
 - **Control Preciso de Fechas y Zonas Horarias**: Motor (`DateFormatter`) que preserva de forma estricta los días de calendario seleccionados (`YYYY-MM-DD`), inmune a desfases horarios por desfase UTC.
 - **Recordatorios Proactivos de Pagos**: Banner destacado en el Dashboard para suscripciones y servicios próximos a vencer o vencidos con acción directa de registro de pago y soporte para notificaciones web.
 - **Importación Masiva de Extractos Bancarios (CSV / Excel)**: Importador guiado paso a paso con auto-detección de delimitador y columnas, mapeo interactivo de cabeceras, detector inteligente de duplicados y previsualización con selección múltiple.
-- **Reportes Financieros Periódicos**: Análisis multiventana de tiempo con presets (Mensual, Bimestral, Trimestral, Semestral, Año Completo y Rango Manual Personalizado), gráfico de tendencias Ingresos vs Gastos, exportación a PDF oficial y CSV.
+- **Reportes Financieros Periódicos & Exportación para IA**: Análisis multiventana de tiempo con presets (Mensual, Bimestral, Trimestral, Semestral, Año Completo y Rango Manual Personalizado), gráfico de tendencias Ingresos vs Gastos, exportación a PDF oficial, CSV y descarga de contexto estructurado en Markdown (.md) especialmente formateado con prompts e instrucciones para chats de IA (Gemini, Claude, ChatGPT).
 - **Búsqueda, Filtros y Exportación CSV**: Búsqueda en tiempo real por texto, filtros combinados por tipo, cuenta, categoría y fechas, y exportación de historial en formato CSV (RFC 4180).
 
 ---
