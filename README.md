@@ -1,5 +1,9 @@
 # Tique — Plataforma de Gestión Patrimonial & Finanzas Personales
 
+<a href="https://github.com/Gentleman-Programming/gentle-ai">
+  <img width="220" src="https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/docs/assets/brand/built-with-gentle-ai.png" alt="Built with Gentle-AI" />
+</a>
+
 **Tique** (nombrada en honor a la deidad griega de la fortuna, la prosperidad y el destino) es la aplicación web SPA/PWA para el control patrimonial, cuentas multimoneda y seguimiento financiero dentro del ecosistema **Lascar**.
 
 Se conecta a la API backend **Guilliman** mediante cliente HTTP centralizado (`ApiClient`) y utiliza **Nuxt UI v4** con la paleta de identidad visual de **Lascar Blog** (Deep Navy `#0B0F19`, Steel Blue `#4D7EA8`, Soft Gold `#E0DDCF`, Antique Ivory `#FAF7F2`) con soporte completo para modo claro y oscuro.
