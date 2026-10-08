@@ -8,6 +8,12 @@ describe('FinancialCalendar.vue - Canonical 7-Day Responsive Grid', () => {
     setActivePinia(createPinia());
   });
 
+  // The component renders the month of the local clock, and the service matches
+  // events by the date prefix against that same local year/month. A hardcoded
+  // calendar date therefore only passes while that month happens to be current.
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
   const defaultMountOptions = {
     props: {
       subscriptions: [
@@ -18,7 +24,7 @@ describe('FinancialCalendar.vue - Canonical 7-Day Responsive Grid', () => {
           amount: 15.99,
           currency: 'USD',
           frequency: 'MONTHLY' as const,
-          nextDueDate: '2026-09-15T00:00:00.000Z',
+          nextDueDate: `${currentMonthKey}-15T00:00:00.000Z`,
           categoryId: 'cat-1',
           accountId: 'acc-1',
           isActive: true,
