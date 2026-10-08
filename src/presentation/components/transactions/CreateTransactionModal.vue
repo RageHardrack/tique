@@ -271,6 +271,7 @@ const budgetAlert = computed(() => {
         : undefined,
     budgets: budgetStore.budgets,
     monthlyTransactions: transactionStore.transactions,
+    currentDate: new Date(DateFormatter.toIsoString(form.date)),
     accountsCurrencyMap: accountsCurrencyMap.value,
     baseCurrency: rateStore.baseCurrency,
     convertFn: (amount, from, to) => rateStore.convert(amount, from, to),

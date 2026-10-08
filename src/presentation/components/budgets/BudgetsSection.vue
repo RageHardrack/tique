@@ -8,7 +8,7 @@ import type { Transaction } from '../../../core/entities/Transaction';
 import type { SupportedCurrency } from '../../../core/entities/Account';
 import type { Budget, BudgetProgress } from '../../../core/entities/Budget';
 import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
-import { CurrencyConverter } from '../../../core/services/CurrencyConverter';
+import { MonthlySpendingService } from '../../../core/services/MonthlySpendingService';
 
 interface Props {
   budgets: Budget[];
@@ -72,28 +72,16 @@ const categoriesMap = computed(() => {
 
 // Calculate spent amount per category for current month's expenses
 const categorySpentMap = computed(() => {
-  const map: Record<string, number> = {};
+  const now = new Date();
 
-  props.transactions
-    .filter((tx) => tx.type === 'EXPENSE' && tx.categoryId)
-    .forEach((tx) => {
-      const sourceCurrency = props.accountsCurrencyMap[tx.accountId] || 'USD';
-      const converted =
-        tx.exchangeRate !== null &&
-        tx.exchangeRate !== undefined &&
-        tx.exchangeRate > 0
-          ? CurrencyConverter.convertTransaction(
-              tx.amount,
-              sourceCurrency,
-              props.baseCurrency,
-              tx.exchangeRate,
-            )
-          : props.convertFn(tx.amount, sourceCurrency, props.baseCurrency);
-      const catId = tx.categoryId!;
-      map[catId] = (map[catId] || 0) + converted;
-    });
-
-  return map;
+  return MonthlySpendingService.sumExpensesByCategory({
+    transactions: props.transactions,
+    year: now.getUTCFullYear(),
+    month: now.getUTCMonth() + 1,
+    baseCurrency: props.baseCurrency,
+    accountsCurrencyMap: props.accountsCurrencyMap,
+    convertFn: props.convertFn,
+  });
 });
 
 const progressList = computed<BudgetProgress[]>(() => {

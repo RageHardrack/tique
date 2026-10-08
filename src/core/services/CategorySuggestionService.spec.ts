@@ -74,6 +74,7 @@ describe('CategorySuggestionService & BudgetAlertService', () => {
       transactionAmount: 35,
       budgets,
       monthlyTransactions: existingTxs,
+      currentDate: new Date('2026-09-15T12:00:00Z'),
     });
 
     expect(warningStatus?.hasAlert).toBe(true);
@@ -86,6 +87,7 @@ describe('CategorySuggestionService & BudgetAlertService', () => {
       transactionAmount: 60,
       budgets,
       monthlyTransactions: existingTxs,
+      currentDate: new Date('2026-09-15T12:00:00Z'),
     });
 
     expect(exceededStatus?.hasAlert).toBe(true);

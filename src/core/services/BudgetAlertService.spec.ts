@@ -44,6 +44,46 @@ describe('BudgetAlertService (Multi-Currency)', () => {
     return amount;
   };
 
+  it('excludes previous-month spending while including spending in the anchor month', () => {
+    const monthlyTransactions: Transaction[] = [
+      {
+        id: 'tx-previous-month',
+        userId: 'u-1',
+        accountId: 'acc-usd',
+        categoryId: 'cat-mercado',
+        amount: 250,
+        type: 'EXPENSE',
+        date: '2026-08-31T23:59:59Z',
+        createdAt: '2026-08-31T23:59:59Z',
+        updatedAt: '2026-08-31T23:59:59Z',
+      },
+      {
+        id: 'tx-anchor-month',
+        userId: 'u-1',
+        accountId: 'acc-usd',
+        categoryId: 'cat-mercado',
+        amount: 300,
+        type: 'EXPENSE',
+        date: '2026-09-01T00:00:00Z',
+        createdAt: '2026-09-01T00:00:00Z',
+        updatedAt: '2026-09-01T00:00:00Z',
+      },
+    ];
+
+    const result = BudgetAlertService.checkBudgetThreshold({
+      categoryId: 'cat-mercado',
+      transactionAmount: 100,
+      budgets,
+      monthlyTransactions,
+      currentDate: new Date('2026-09-15T12:00:00Z'),
+    });
+
+    expect(result?.currentSpent).toBe(300);
+    expect(result?.newSpent).toBe(400);
+    expect(result?.level).toBe('WARNING_80');
+    expect(result?.projectedPercentage).toBe(80);
+  });
+
   it('returns null if categoryId is missing, amount <= 0, or no budget matches', () => {
     expect(
       BudgetAlertService.checkBudgetThreshold({
@@ -93,6 +133,7 @@ describe('BudgetAlertService (Multi-Currency)', () => {
       transactionCurrency: 'VES',
       budgets,
       monthlyTransactions,
+      currentDate: new Date('2026-09-15T12:00:00Z'),
       accountsCurrencyMap,
       baseCurrency: 'USD',
       convertFn,
@@ -129,6 +170,7 @@ describe('BudgetAlertService (Multi-Currency)', () => {
       transactionCurrency: 'VES',
       budgets,
       monthlyTransactions,
+      currentDate: new Date('2026-09-15T12:00:00Z'),
       accountsCurrencyMap,
       baseCurrency: 'USD',
       convertFn,
@@ -162,6 +204,7 @@ describe('BudgetAlertService (Multi-Currency)', () => {
       transactionCurrency: 'VES',
       budgets,
       monthlyTransactions,
+      currentDate: new Date('2026-09-15T12:00:00Z'),
       accountsCurrencyMap,
       baseCurrency: 'USD',
       convertFn,
@@ -195,6 +238,7 @@ describe('BudgetAlertService (Multi-Currency)', () => {
       transactionCurrency: 'VES',
       budgets,
       monthlyTransactions,
+      currentDate: new Date('2026-09-15T12:00:00Z'),
       accountsCurrencyMap,
       baseCurrency: 'USD',
       convertFn,
@@ -242,6 +286,7 @@ describe('BudgetAlertService (Multi-Currency)', () => {
       transactionCurrency: 'USD',
       budgets,
       monthlyTransactions,
+      currentDate: new Date('2026-09-15T12:00:00Z'),
       accountsCurrencyMap,
       baseCurrency: 'USD',
       convertFn: floatingConvertFn,

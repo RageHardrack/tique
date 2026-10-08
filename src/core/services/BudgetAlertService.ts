@@ -2,6 +2,7 @@ import type { Budget } from '../entities/Budget';
 import type { Transaction } from '../entities/Transaction';
 import type { SupportedCurrency } from '../entities/Account';
 import { CurrencyConverter } from './CurrencyConverter';
+import { MonthlySpendingService } from './MonthlySpendingService';
 
 export type BudgetAlertLevel = 'SAFE' | 'WARNING_80' | 'EXCEEDED_100';
 
@@ -52,6 +53,7 @@ export class BudgetAlertService {
       accountsCurrencyMap = {},
       baseCurrency = 'USD',
       convertFn,
+      currentDate = new Date(),
     } = params;
 
     if (!categoryId || !transactionAmount || transactionAmount <= 0) return null;
@@ -86,7 +88,12 @@ export class BudgetAlertService {
     };
 
     // Calculate current spending in this category converted to target budget currency
-    const currentSpent = monthlyTransactions
+    const currentMonthTransactions = MonthlySpendingService.filterByMonth(
+      monthlyTransactions,
+      currentDate.getUTCFullYear(),
+      currentDate.getUTCMonth() + 1,
+    );
+    const currentSpent = currentMonthTransactions
       .filter((t) => t.type === 'EXPENSE' && t.categoryId === categoryId)
       .reduce((sum, t) => {
         const sourceCurrency = accountsCurrencyMap[t.accountId] || targetBudgetCurrency;
