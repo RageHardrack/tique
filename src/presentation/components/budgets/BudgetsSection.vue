@@ -9,6 +9,7 @@ import type { SupportedCurrency } from '../../../core/entities/Account';
 import type { Budget, BudgetProgress } from '../../../core/entities/Budget';
 import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
 import { MonthlySpendingService } from '../../../core/services/MonthlySpendingService';
+import { useCurrentMonthKey } from '../../composables/useCurrentMonthKey';
 
 interface Props {
   budgets: Budget[];
@@ -71,13 +72,12 @@ const categoriesMap = computed(() => {
 });
 
 // Calculate spent amount per category for current month's expenses
+const { month } = useCurrentMonthKey();
 const categorySpentMap = computed(() => {
-  const now = new Date();
-
   return MonthlySpendingService.sumExpensesByCategory({
     transactions: props.transactions,
-    year: now.getUTCFullYear(),
-    month: now.getUTCMonth() + 1,
+    year: month.value.year,
+    month: month.value.month,
     baseCurrency: props.baseCurrency,
     accountsCurrencyMap: props.accountsCurrencyMap,
     convertFn: props.convertFn,

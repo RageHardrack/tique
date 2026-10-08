@@ -1,9 +1,16 @@
-import { describe, expect, it } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { enableAutoUnmount, mount } from '@vue/test-utils';
+import { MONTH_ROLLOVER_INTERVAL_MS } from '../../composables/useCurrentMonthKey';
 import Budget503020Panel from './Budget503020Panel.vue';
 import type { Category } from '../../../core/entities/Category';
 import type { Transaction } from '../../../core/entities/Transaction';
 import type { Budget } from '../../../core/entities/Budget';
+
+enableAutoUnmount(afterEach);
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('Budget503020Panel.vue (50/30/20 Monthly Dashboard Component)', () => {
   const categories: Category[] = [
@@ -116,5 +123,39 @@ describe('Budget503020Panel.vue (50/30/20 Monthly Dashboard Component)', () => {
 
     vm.nextMonth();
     expect(vm.selectedMonth).toBe(initialMonth);
+  });
+
+  it('follows the current month when the calendar rolls over', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-31T23:59:00.000Z'));
+
+    const wrapper = mount(Budget503020Panel, {
+      props: { categories, transactions, budgets, currency: 'USD' },
+    });
+
+    expect(wrapper.text()).toContain('Octubre 2026');
+
+    vi.setSystemTime(new Date('2026-11-01T00:00:00.000Z'));
+    await vi.advanceTimersByTimeAsync(MONTH_ROLLOVER_INTERVAL_MS);
+
+    expect(wrapper.text()).toContain('Noviembre 2026');
+  });
+
+  it('keeps a manually selected month when the calendar rolls over', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-31T23:59:00.000Z'));
+
+    const wrapper = mount(Budget503020Panel, {
+      props: { categories, transactions, budgets, currency: 'USD' },
+    });
+
+    await wrapper.get('[aria-label="Mes anterior"]').trigger('click');
+    expect(wrapper.text()).toContain('Setiembre 2026');
+
+    vi.setSystemTime(new Date('2026-11-01T00:00:00.000Z'));
+    await vi.advanceTimersByTimeAsync(MONTH_ROLLOVER_INTERVAL_MS);
+
+    expect(wrapper.text()).toContain('Setiembre 2026');
+    expect(wrapper.text()).not.toContain('Noviembre 2026');
   });
 });

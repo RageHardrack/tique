@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { Category } from '../../../core/entities/Category';
 import type { Transaction } from '../../../core/entities/Transaction';
 import type { Budget } from '../../../core/entities/Budget';
 import { BudgetRule503020Service } from '../../../core/services/BudgetRule503020Service';
 import { CurrencyFormatter } from '../../../core/services/CurrencyFormatter';
+import { useCurrentMonthKey } from '../../composables/useCurrentMonthKey';
 
 interface Props {
   categories: Category[];
@@ -21,9 +22,19 @@ const emit = defineEmits<{
   (e: 'open-category-modal', category?: Category): void;
 }>();
 
-const now = new Date();
-const selectedYear = ref(now.getUTCFullYear());
-const selectedMonth = ref(now.getUTCMonth() + 1);
+const { month } = useCurrentMonthKey();
+const selectedYear = ref(month.value.year);
+const selectedMonth = ref(month.value.month);
+
+watch(month, (next, previous) => {
+  const wasTrackingCurrentMonth =
+    selectedYear.value === previous.year && selectedMonth.value === previous.month;
+
+  if (wasTrackingCurrentMonth) {
+    selectedYear.value = next.year;
+    selectedMonth.value = next.month;
+  }
+});
 
 const monthNames = [
   'Enero',
