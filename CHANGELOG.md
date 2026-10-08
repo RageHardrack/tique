@@ -2,6 +2,22 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo siguiendo [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [v0.3.0] - 2026-10-08
+
+### Características
+- **budgets**: el mes en curso pasa a ser reactivo, de modo que los presupuestos siguen el cambio de mes sin recargar la aplicación (`feat(budgets)`).
+- **reports**: exportación de contexto en Markdown para análisis con LLM (`feat(reports)`).
+- **subscriptions**: modal de pago inteligente con conversión multimoneda y montos debitados personalizados (`feat(subscriptions)`).
+- **goals**: calculadora de capacidad de ahorro y simulador de compra (`feat(goals)`).
+
+### Correcciones
+- **budgets**: el gasto por categoría y las alertas de sobregasto se acotan al mes del movimiento, en lugar de sumar el historial completo (`fix(budgets)`).
+- **calendar**: conversión multimoneda en los totales del calendario y en las estimaciones de suscripciones (`fix(calendar)`).
+- **subscriptions**: cálculo de vencimiento unificado con `ReminderService` para evitar corrimientos de zona horaria (`fix(subscriptions)`).
+- **layout**: `overflow-x-clip` en lugar de `overflow-x-hidden` para restaurar la barra lateral sticky (`fix(layout)`).
+
+---
+
 ## [v0.2.0] - 2026-09-17
 
 ### Características
