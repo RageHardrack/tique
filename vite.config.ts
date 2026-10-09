@@ -20,7 +20,7 @@ export default defineConfig({
     }),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       manifest: {
         name: 'Tique — Fortuna & Finanzas Personales',
         short_name: 'Tique',
@@ -51,6 +51,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
       },
     }),
   ],

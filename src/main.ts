@@ -7,8 +7,8 @@ import ui from '@nuxt/ui/vue-plugin';
 import './style.css';
 import App from './App.vue';
 import { router } from './presentation/router';
-import { usePwaStore } from './presentation/store/pwa';
 import { useThemeStore } from './presentation/store/theme';
+import { registerServiceWorker } from './presentation/pwa/registerServiceWorker';
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -18,6 +18,6 @@ app.use(router);
 app.use(ui);
 app.mount('#app');
 
-// Initialize theme and PWA update listener
+// Initialize theme and service worker
 useThemeStore().initTheme();
-usePwaStore();
+registerServiceWorker();
