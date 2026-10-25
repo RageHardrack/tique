@@ -2,6 +2,15 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo siguiendo [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [v0.5.1] - 2026-10-25
+
+### Correcciones
+- **transactions**: la tasa oficial del día se vuelve a completar al abrir un movimiento en bolívares, incluso al reabrir el formulario o cuando la sincronización responde después de abrirlo, salvo que se escriba una tasa propia (`fix(transactions)`).
+- **rates**: las tasas oficiales se consultan de nuevo una vez por día, al cargar la aplicación y al abrir un movimiento, en lugar de quedar congeladas en la última carga completa (`fix(rates)`).
+- **pwa**: el service worker se actualiza solo en lugar de quedar fijado al paquete precargado de la versión anterior cuando se descartaba el aviso de actualización (`fix(pwa)`).
+
+---
+
 ## [v0.5.0] - 2026-10-08
 
 ### Características

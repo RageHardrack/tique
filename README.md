@@ -13,7 +13,7 @@ Se conecta a la API backend **Guilliman** mediante cliente HTTP centralizado (`A
 ## 🌟 Módulos y Capacidades
 
 - **Cuentas Multimoneda**: Gestión de cuentas bancarias, billeteras digitales y efectivo con conversión en tiempo real a moneda base (USD, PEN, VES) y tasas configurables.
-- **Tasa de Cambio Diaria por Transacción (VES / USD)**: Captura y almacenamiento de la tasa del momento en operaciones en bolívares con previsualización en vivo en USD, edición manual y preservación determinista del poder adquisitivo histórico en los presupuestos mensuales frente a la inflación.
+- **Tasa de Cambio Diaria por Transacción (VES / USD)**: Captura y almacenamiento de la tasa del momento en operaciones en bolívares con previsualización en vivo en USD, edición manual y preservación determinista del poder adquisitivo histórico en los presupuestos mensuales frente a la inflación. El campo se completa automáticamente con la tasa oficial del día (BCV) al abrir el movimiento y se actualiza cuando la sincronización diaria responde, salvo que escribas una tasa propia.
 - **Conciliación & Ajuste de Saldos Reales**: Comparación directa entre saldo contable y saldo real de banco/billetera con generación atómica de movimientos de ajuste y cálculo de discrepancias.
 - **Analítica Visual**: Gráfico Donut interactivo SVG para distribución de gastos por categoría y tarjeta de Flujo de Caja Neto con cálculo automático de tasa de ahorro mensual.
 - **Registro Rápido Diario (Mobile Quick-Add & FAB)**: Botón flotante ergonómico para una sola mano, bottom sheet con input numérico táctil grande, detección automática de gastos frecuentes y PWA Web App Shortcuts (`Nuevo Gasto`, `Nuevo Ingreso`).

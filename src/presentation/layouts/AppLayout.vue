@@ -16,7 +16,7 @@ defineProps<Props>();
 const rateStore = useExchangeRateStore();
 
 onMounted(() => {
-  rateStore.fetchRates();
+  void rateStore.ensureFreshRates();
 });
 </script>
 
