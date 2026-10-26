@@ -15,6 +15,15 @@ const LEGACY_STORAGE_KEY_BASE = 'financiapp_base_currency';
 const STORAGE_KEY_RATES = 'financiapp_exchange_rates';
 const STORAGE_KEY_SOURCES = 'financiapp_exchange_sources';
 const STORAGE_KEY_UPDATED = 'financiapp_exchange_updated_at';
+const STORAGE_KEY_FETCHED_ON = 'financiapp_exchange_rates_fetched_on';
+
+/**
+ * The official rates change once a day (BCV/SUNAT sync runs at 20:00 Caracas,
+ * which is 00:00 UTC), so a fetch per UTC day is enough to keep them current.
+ */
+function currentUtcDay(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function loadStoredBase(): SupportedCurrency {
   try {
@@ -70,6 +79,17 @@ function loadStoredSources(): Record<string, string> {
   return { USD: 'FIXED', PEN: 'SUNAT', VES: 'BCV' };
 }
 
+function loadFetchedOn(): string | null {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem(STORAGE_KEY_FETCHED_ON);
+    }
+  } catch {
+    // Ignore error
+  }
+  return null;
+}
+
 export const useExchangeRateStore = defineStore('exchangeRates', () => {
   const baseCurrency = ref<SupportedCurrency>(loadStoredBase());
   const rates = ref<ExchangeRates>(loadStoredRates());
@@ -81,6 +101,8 @@ export const useExchangeRateStore = defineStore('exchangeRates', () => {
   );
   const isLoading = ref(false);
   const isSyncing = ref(false);
+  const lastFetchedOn = ref<string | null>(loadFetchedOn());
+  let inFlightFetch: Promise<void> | null = null;
 
   watch(baseCurrency, (newCurrency) => {
     try {
@@ -122,11 +144,13 @@ export const useExchangeRateStore = defineStore('exchangeRates', () => {
   function resetRates() {
     rates.value = { ...DEFAULT_EXCHANGE_RATES };
     sources.value = { USD: 'FIXED', PEN: 'SUNAT', VES: 'BCV' };
+    lastFetchedOn.value = null;
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.removeItem(STORAGE_KEY_RATES);
         localStorage.removeItem(STORAGE_KEY_SOURCES);
         localStorage.removeItem(STORAGE_KEY_UPDATED);
+        localStorage.removeItem(STORAGE_KEY_FETCHED_ON);
       }
     } catch {
       // Ignore error
@@ -155,9 +179,11 @@ export const useExchangeRateStore = defineStore('exchangeRates', () => {
         if (data.lastUpdated) {
           lastUpdated.value = data.lastUpdated;
         }
+        lastFetchedOn.value = currentUtcDay();
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem(STORAGE_KEY_RATES, JSON.stringify(rates.value));
           localStorage.setItem(STORAGE_KEY_SOURCES, JSON.stringify(sources.value));
+          localStorage.setItem(STORAGE_KEY_FETCHED_ON, lastFetchedOn.value);
           if (lastUpdated.value) {
             localStorage.setItem(STORAGE_KEY_UPDATED, lastUpdated.value);
           }
@@ -168,6 +194,20 @@ export const useExchangeRateStore = defineStore('exchangeRates', () => {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  /**
+   * Fetches the official rates at most once per UTC day, so a form that opens
+   * later the same day never waits for a request just to show the daily rate.
+   */
+  async function ensureFreshRates(): Promise<void> {
+    if (inFlightFetch) return inFlightFetch;
+    if (lastFetchedOn.value === currentUtcDay()) return;
+
+    inFlightFetch = fetchRates().finally(() => {
+      inFlightFetch = null;
+    });
+    return inFlightFetch;
   }
 
   async function syncRates(token?: string | null) {
@@ -207,6 +247,7 @@ export const useExchangeRateStore = defineStore('exchangeRates', () => {
     updateRate,
     resetRates,
     fetchRates,
+    ensureFreshRates,
     syncRates,
     convert,
   };

@@ -1,13 +1,30 @@
 import { createPinia, setActivePinia } from 'pinia';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useExchangeRateStore } from './exchange-rates';
+
+function mockRatesResponse(ves: number) {
+  return {
+    ok: true,
+    json: async () => ({
+      baseCurrency: 'USD',
+      rates: { USD: 1, PEN: 3.356, VES: ves },
+      sources: { USD: 'FIXED', PEN: 'SUNAT', VES: 'BCV' },
+      lastUpdated: '2026-08-29T20:00:00.000Z',
+    }),
+  } as any;
+}
 
 describe('useExchangeRateStore', () => {
   beforeEach(() => {
     localStorage.clear();
     setActivePinia(createPinia());
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it('should initialize with default base currency and rates', () => {
@@ -103,5 +120,56 @@ describe('useExchangeRateStore', () => {
     localStorage.setItem('tique_base_currency', 'INVALID_CURRENCY');
     const store = useExchangeRateStore();
     expect(store.baseCurrency).toBe('USD');
+  });
+
+  describe('ensureFreshRates', () => {
+    it('fetches the official rates once per UTC day', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-10-25T12:00:00.000Z'));
+      const fetchSpy = vi
+        .spyOn(global, 'fetch')
+        .mockResolvedValue(mockRatesResponse(886.2271));
+
+      const store = useExchangeRateStore();
+      await store.ensureFreshRates();
+      expect(store.rates.VES).toBe(886.2271);
+
+      await store.ensureFreshRates();
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+      vi.setSystemTime(new Date('2026-10-26T12:00:00.000Z'));
+      await store.ensureFreshRates();
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('retries on the next call when the request fails', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-10-25T12:00:00.000Z'));
+      const fetchSpy = vi
+        .spyOn(global, 'fetch')
+        .mockRejectedValueOnce(new Error('offline'))
+        .mockResolvedValueOnce(mockRatesResponse(886.2271));
+
+      const store = useExchangeRateStore();
+      await store.ensureFreshRates();
+      expect(store.rates.VES).toBe(39.5);
+
+      await store.ensureFreshRates();
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(store.rates.VES).toBe(886.2271);
+    });
+
+    it('reuses a cached fetch from a previous load on the same day', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-10-25T12:00:00.000Z'));
+      localStorage.setItem('financiapp_exchange_rates_fetched_on', '2026-10-25');
+
+      const fetchSpy = vi.spyOn(global, 'fetch');
+
+      const store = useExchangeRateStore();
+      await store.ensureFreshRates();
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
   });
 });

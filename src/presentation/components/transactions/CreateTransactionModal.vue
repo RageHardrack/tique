@@ -130,6 +130,23 @@ const isVesTransaction = computed(
   () => selectedAccount.value?.currency === 'VES',
 );
 
+// The VES rate field mirrors the official daily rate until the user types
+// their own rate, so a rate that arrives after the form opened still lands.
+const followsOfficialRate = ref(false);
+
+function seedDailyVesRate() {
+  const official = rateStore.rates.VES;
+  if (!isVesTransaction.value || !official || official <= 0) return;
+  if (form.exchangeRate && !followsOfficialRate.value) return;
+
+  form.exchangeRate = official;
+  followsOfficialRate.value = true;
+}
+
+function handleExchangeRateInput() {
+  followsOfficialRate.value = false;
+}
+
 const liveUsdEquivalent = computed(() => {
   if (
     !isVesTransaction.value ||
@@ -147,14 +164,15 @@ watch(
   () => selectedAccount.value?.currency,
   (newCurrency) => {
     if (newCurrency === 'VES') {
-      if (!form.exchangeRate) {
-        form.exchangeRate = rateStore.rates.VES || null;
-      }
+      seedDailyVesRate();
     } else if (form.type !== 'TRANSFER') {
       form.exchangeRate = null;
+      followsOfficialRate.value = false;
     }
   },
 );
+
+watch(() => rateStore.rates.VES, seedDailyVesRate);
 
 function calculateDestinationAmount() {
   if (
@@ -174,9 +192,11 @@ function calculateDestinationAmount() {
       Math.round(
         (Number(form.destinationAmount) / Number(form.amount)) * 10000,
       ) / 10000;
+    followsOfficialRate.value = false;
   } else if (!isCrossCurrency.value) {
     form.destinationAmount = form.amount;
     form.exchangeRate = 1;
+    followsOfficialRate.value = false;
   }
 }
 
@@ -197,6 +217,7 @@ function handleDestinationAmountInput() {
       Math.round(
         (Number(form.destinationAmount) / Number(form.amount)) * 10000,
       ) / 10000;
+    followsOfficialRate.value = false;
   }
 }
 
@@ -314,6 +335,8 @@ watch(
       nextTick(() => {
         isInitializing.value = false;
       });
+      seedDailyVesRate();
+      void rateStore.ensureFreshRates();
     }
   },
   { immediate: true },
@@ -454,6 +477,7 @@ function resetForm() {
   form.amount = null;
   form.destinationAmount = null;
   form.exchangeRate = null;
+  followsOfficialRate.value = false;
   form.date = DateFormatter.toInputDate();
   form.note = '';
   form.taxCategory = 'NONE';
@@ -462,6 +486,7 @@ function resetForm() {
   form.taxWithholdingAmount = null;
   form.taxDeductionType = 'NONE';
   errorMessage.value = null;
+  seedDailyVesRate();
 }
 
 function handleClose() {
@@ -831,6 +856,7 @@ function handleSubmit() {
               placeholder="Ej. 813.74"
               class="w-full text-sm font-medium"
               required
+              @input="handleExchangeRateInput"
             />
             <p class="text-[11px] text-slate-400">
               Tasa del momento para calcular el valor real histórico en USD.

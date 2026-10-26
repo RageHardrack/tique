@@ -62,6 +62,25 @@ const activeAccountCurrency = computed(() => {
 
 const isVesAccount = computed(() => activeAccountCurrency.value === 'VES');
 
+// The VES rate field mirrors the official daily rate until the user types
+// their own rate, so a rate that arrives after the sheet opened still lands.
+const followsOfficialRate = ref(false);
+
+function seedDailyVesRate() {
+  const official = rateStore.rates.VES;
+  if (!isVesAccount.value || !official || official <= 0) return;
+  if (exchangeRate.value && !followsOfficialRate.value) return;
+
+  exchangeRate.value = official;
+  followsOfficialRate.value = true;
+}
+
+function handleExchangeRateInput() {
+  followsOfficialRate.value = false;
+}
+
+watch(() => rateStore.rates.VES, seedDailyVesRate);
+
 const liveUsdEquivalent = computed(() => {
   if (
     !isVesAccount.value ||
@@ -79,11 +98,10 @@ watch(
   () => activeAccountCurrency.value,
   (curr) => {
     if (curr === 'VES') {
-      if (!exchangeRate.value) {
-        exchangeRate.value = rateStore.rates.VES || null;
-      }
+      seedDailyVesRate();
     } else {
       exchangeRate.value = null;
+      followsOfficialRate.value = false;
     }
   },
   { immediate: true },
@@ -95,7 +113,9 @@ function resetForm() {
   selectedCategoryId.value = '';
   categorySearch.value = '';
   amount.value = '';
-  exchangeRate.value = activeAccountCurrency.value === 'VES' ? (rateStore.rates.VES || null) : null;
+  exchangeRate.value = null;
+  followsOfficialRate.value = false;
+  seedDailyVesRate();
   note.value = '';
   errorMessage.value = null;
 }
@@ -105,6 +125,7 @@ watch(
   ([isOpen]) => {
     if (isOpen) {
       resetForm();
+      void rateStore.ensureFreshRates();
     }
   },
   { immediate: true },
@@ -330,6 +351,7 @@ async function handleSubmit() {
             size="sm"
             class="w-full"
             required
+            @input="handleExchangeRateInput"
           />
         </div>
 
