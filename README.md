@@ -16,10 +16,11 @@ Se conecta a la API backend **Guilliman** mediante cliente HTTP centralizado (`A
 - **Tasa de Cambio Diaria por Transacción (VES / USD)**: Captura y almacenamiento de la tasa del momento en operaciones en bolívares con previsualización en vivo en USD, edición manual y preservación determinista del poder adquisitivo histórico en los presupuestos mensuales frente a la inflación. El campo se completa automáticamente con la tasa oficial del día (BCV) al abrir el movimiento y se actualiza cuando la sincronización diaria responde, salvo que escribas una tasa propia.
 - **Conciliación & Ajuste de Saldos Reales**: Comparación directa entre saldo contable y saldo real de banco/billetera con generación atómica de movimientos de ajuste y cálculo de discrepancias.
 - **Analítica Visual**: Gráfico Donut interactivo SVG para distribución de gastos por categoría y tarjeta de Flujo de Caja Neto con cálculo automático de tasa de ahorro mensual.
-- **Registro Rápido Diario (Mobile Quick-Add & FAB)**: Botón flotante ergonómico para una sola mano, bottom sheet con input numérico táctil grande, detección automática de gastos frecuentes y PWA Web App Shortcuts (`Nuevo Gasto`, `Nuevo Ingreso`).
+- **Registro Rápido Diario (Mobile Quick-Add & FAB)**: Botón flotante ergonómico para una sola mano, bottom sheet con input numérico táctil grande, detección automática de gastos frecuentes y PWA Web App Shortcuts (`Nuevo Gasto`, `Nuevo Ingreso`). También registra transferencias entre cuentas propias, con monto destino editable cuando las monedas difieren, y lista las plantillas del usuario para pre-cargarlas en un toque.
 - **Presupuestos Mensuales**: Definición de metas y límites de gasto por categoría con barras de progreso dinámicas (Verde `< 75%`, Amarillo `75% - 99%`, Rojo `>= 100%`) y disponible restante.
 - **Metas de Ahorro (Sinking Funds)**: Fondos especiales y objetivos a mediano/largo plazo con progreso visual, cálculo de faltante, fechas límite y depósitos/retiros directos contra cuentas bancarias.
 - **Suscripciones y Pagos Fijos**: Gestión de pagos recurrentes con badges de urgencia (`Vence hoy`, `Vence en X días`), alertas y ejecución atómica de cobro con avance automático de fecha.
+- **Plantillas de Movimientos (`/plantillas`)**: Cada usuario guarda sus movimientos repetidos —gasto, ingreso o transferencia entre dos cuentas propias— con cuenta, categoría y monto opcional. El Registro Rápido las lista por uso reciente; tocar una pre-carga tipo, cuentas, categoría, nota y monto, siempre editables, y la plantilla solo se marca como usada cuando el movimiento se creó. **No son programables**: no tienen frecuencia ni vencimientos, eso sigue siendo propio de las Suscripciones.
 - **Deudas a Cuotas & Esquema Cashea (14 días)**: Motor de financiamiento quincenal (`BIWEEKLY_14_DAYS`), semanal y mensual con amortización sin interés (0%) o tasa pactada, desglose cronológico de cuotas y fechas límites de pago automáticas.
 - **Inteligencia para Tarjetas de Crédito**: Gestión de límites crediticios, porcentaje dinámico de utilización, cálculo de línea disponible, días de corte, fechas límite de pago y estimación de pago mínimo mensual.
 - **Dashboard de Patrimonio Neto Real & Desglose de Activos/Pasivos**: Consolidación ejecutiva del patrimonio total descontando deudas y líneas de crédito consumidas, con visibilidad de liquidez operativa disponible.
@@ -47,7 +48,7 @@ Se conecta a la API backend **Guilliman** mediante cliente HTTP centralizado (`A
 - **Build Tool**: [Vite](https://vitejs.dev/) + `@nuxt/ui/vite`
 - **Gestor de Paquetes**: [Bun](https://bun.sh/)
 - **Gestión de Puertos**: [Portless](https://portless.org/) (`PORTLESS_PORT=1355 PORTLESS_HTTPS=0 portless run ...`)
-- **Unit Testing**: [Vitest](https://vitest.dev/) con 100% de pruebas pasando (228/228 tests en 44 suites)
+- **Unit Testing**: [Vitest](https://vitest.dev/) con 100% de pruebas pasando (349/349 tests en 64 suites)
 - **E2E Testing**: [Playwright](https://playwright.dev/) con suite multi-dispositivo (16/16 suites, 38 tests pasando en Desktop & Mobile)
 
 ---

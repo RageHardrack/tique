@@ -13,6 +13,7 @@ import { useBudgetStore } from '../../store/budgets';
 import { useTransactionStore } from '../../store/transactions';
 import { CategorySuggestionService } from '../../../core/services/CategorySuggestionService';
 import { BudgetAlertService } from '../../../core/services/BudgetAlertService';
+import { TransferAmountService } from '../../../core/services/TransferAmountService';
 import SearchableSelect from '../base/SearchableSelect.vue';
 
 interface Props {
@@ -187,11 +188,12 @@ function calculateDestinationAmount() {
       selectedAccount.value.currency,
       selectedDestinationAccount.value.currency,
     );
-    form.destinationAmount = Math.round(converted * 100) / 100;
-    form.exchangeRate =
-      Math.round(
-        (Number(form.destinationAmount) / Number(form.amount)) * 10000,
-      ) / 10000;
+    const implied = TransferAmountService.autoCalculate({
+      amount: Number(form.amount),
+      convertedAmount: converted,
+    });
+    form.destinationAmount = implied.destinationAmount;
+    form.exchangeRate = implied.exchangeRate;
     followsOfficialRate.value = false;
   } else if (!isCrossCurrency.value) {
     form.destinationAmount = form.amount;
@@ -207,18 +209,17 @@ function handleAmountInput() {
 }
 
 function handleDestinationAmountInput() {
-  if (
-    form.amount &&
-    Number(form.amount) > 0 &&
-    form.destinationAmount &&
-    Number(form.destinationAmount) > 0
-  ) {
-    form.exchangeRate =
-      Math.round(
-        (Number(form.destinationAmount) / Number(form.amount)) * 10000,
-      ) / 10000;
-    followsOfficialRate.value = false;
-  }
+  const implied = TransferAmountService.deriveRate(
+    Number(form.amount),
+    form.destinationAmount === null || form.destinationAmount === undefined
+      ? null
+      : Number(form.destinationAmount),
+  );
+
+  if (implied === null) return;
+
+  form.exchangeRate = implied;
+  followsOfficialRate.value = false;
 }
 
 // Auto-calculate 8% withholding when selecting 4ta category
@@ -535,21 +536,29 @@ function handleSubmit() {
 
   isSubmitting.value = true;
 
-  const destinationAmountValue =
-    form.type === 'TRANSFER'
-      ? form.destinationAmount !== null && form.destinationAmount !== undefined
+  const transferAmounts = TransferAmountService.resolveSubmitAmounts({
+    type: form.type,
+    isCrossCurrency: isCrossCurrency.value,
+    amount: Number(form.amount),
+    destinationAmount:
+      form.destinationAmount !== null && form.destinationAmount !== undefined
         ? Number(form.destinationAmount)
-        : Number(form.amount)
-      : undefined;
+        : null,
+    exchangeRate:
+      form.exchangeRate !== null && form.exchangeRate !== undefined
+        ? Number(form.exchangeRate)
+        : null,
+  });
+
+  const destinationAmountValue =
+    form.type === 'TRANSFER' ? transferAmounts.destinationAmount : undefined;
 
   const exchangeRateValue =
     form.type === 'TRANSFER' && isCrossCurrency.value
-      ? form.exchangeRate !== null && form.exchangeRate !== undefined
-        ? Number(form.exchangeRate)
-        : form.amount && destinationAmountValue
-          ? Number((destinationAmountValue / Number(form.amount)).toFixed(4))
-          : undefined
-      : isVesTransaction.value && form.exchangeRate !== null && form.exchangeRate !== undefined
+      ? transferAmounts.exchangeRate
+      : isVesTransaction.value &&
+          form.exchangeRate !== null &&
+          form.exchangeRate !== undefined
         ? Number(form.exchangeRate)
         : undefined;
 

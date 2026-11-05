@@ -2,19 +2,22 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import QuickAddBottomSheet from './QuickAddBottomSheet.vue';
+import type { TransactionType } from '../../../core/entities/Transaction';
 
 const route = useRoute();
 
 const isOpen = ref(false);
-const initialType = ref<'EXPENSE' | 'INCOME'>('EXPENSE');
+const initialType = ref<TransactionType>('EXPENSE');
+
+const QUICK_TYPES: Record<string, TransactionType> = {
+  expense: 'EXPENSE',
+  income: 'INCOME',
+  transfer: 'TRANSFER',
+};
 
 onMounted(() => {
   if (route.query.quick) {
-    if (route.query.quick === 'income') {
-      initialType.value = 'INCOME';
-    } else {
-      initialType.value = 'EXPENSE';
-    }
+    initialType.value = QUICK_TYPES[String(route.query.quick)] || 'EXPENSE';
     isOpen.value = true;
   }
 });
