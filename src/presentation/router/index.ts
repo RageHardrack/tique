@@ -8,6 +8,7 @@ import DashboardView from '../views/DashboardView.vue';
 import CategoriesView from '../views/CategoriesView.vue';
 import TransactionsView from '../views/TransactionsView.vue';
 import SubscriptionsView from '../views/SubscriptionsView.vue';
+import TransactionTemplatesView from '../views/TransactionTemplatesView.vue';
 import ReportsView from '../views/ReportsView.vue';
 import GoalsView from '../views/GoalsView.vue';
 import LoansView from '../views/LoansView.vue';
@@ -62,6 +63,12 @@ const routes = [
     path: '/suscripciones',
     name: 'subscriptions',
     component: SubscriptionsView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/plantillas',
+    name: 'transaction-templates',
+    component: TransactionTemplatesView,
     meta: { requiresAuth: true },
   },
   {

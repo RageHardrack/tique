@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { createRouter, createWebHistory } from 'vue-router';
+import { router as appRouter } from './index';
 import { useAuthStore } from '../store/auth';
 import LoginView from '../views/LoginView.vue';
 import DashboardView from '../views/DashboardView.vue';
@@ -21,6 +22,7 @@ function createTestRouter() {
     { path: '/presupuestos', name: 'budgets', component: BudgetsView, meta: { requiresAuth: true } },
     { path: '/metas', name: 'goals', component: DashboardView, meta: { requiresAuth: true } },
     { path: '/suscripciones', name: 'subscriptions', component: SubscriptionsView, meta: { requiresAuth: true } },
+    { path: '/plantillas', name: 'transaction-templates', component: DashboardView, meta: { requiresAuth: true } },
     { path: '/impuestos', name: 'tax', component: DashboardView, meta: { requiresAuth: true } },
     { path: '/categorias', name: 'categories', component: CategoriesView, meta: { requiresAuth: true } },
     { path: '/reportes', name: 'reports', component: DashboardView, meta: { requiresAuth: true } },
@@ -69,6 +71,7 @@ describe('Vue Router - Route Protection and Navigation Guards', () => {
     { path: '/presupuestos', name: 'budgets' },
     { path: '/metas', name: 'goals' },
     { path: '/suscripciones', name: 'subscriptions' },
+    { path: '/plantillas', name: 'transaction-templates' },
     { path: '/categorias', name: 'categories' },
     { path: '/reportes', name: 'reports' },
     { path: '/admin/users', name: 'admin-users' },
@@ -194,5 +197,12 @@ describe('Vue Router - Route Protection and Navigation Guards', () => {
     await testRouter.push('/impuestos');
     await testRouter.isReady();
     expect(testRouter.currentRoute.value.path).toBe('/impuestos');
+  });
+
+  it('registers the Plantillas view on /plantillas behind the auth meta (S6)', () => {
+    const resolved = appRouter.resolve('/plantillas');
+
+    expect(resolved.name).toBe('transaction-templates');
+    expect(resolved.matched[0]?.meta.requiresAuth).toBe(true);
   });
 });

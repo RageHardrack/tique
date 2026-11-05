@@ -53,6 +53,12 @@ const secondaryNavItems: NavItem[] = [
     icon: 'i-heroicons-arrow-path',
   },
   {
+    name: 'transaction-templates',
+    label: 'Plantillas',
+    path: '/plantillas',
+    icon: 'i-heroicons-document-duplicate',
+  },
+  {
     name: 'loans',
     label: 'Préstamos',
     path: '/prestamos',
