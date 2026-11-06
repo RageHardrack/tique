@@ -10,6 +10,7 @@ describe('ApiClient Header Contract & HTTP Methods', () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    ApiClient.configureAuth(null);
   });
 
   it('DELETE does NOT send Content-Type: application/json to avoid Fastify 400 Bad Request', async () => {
@@ -68,5 +69,105 @@ describe('ApiClient Header Contract & HTTP Methods', () => {
     );
 
     await expect(ApiClient.delete('/transactions/unknown')).rejects.toThrow('Transacción no encontrada');
+  });
+});
+
+describe('ApiClient session token', () => {
+  const originalFetch = globalThis.fetch;
+
+  const jsonResponse = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+  const sentHeaders = (): Record<string, string> => {
+    const [, options] = vi.mocked(globalThis.fetch).mock.calls[0];
+    return (options?.headers ?? {}) as Record<string, string>;
+  };
+
+  beforeEach(() => {
+    globalThis.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    ApiClient.configureAuth(null);
+  });
+
+  it('sends the provider token when no explicit token is passed', async () => {
+    ApiClient.configureAuth({ getToken: () => 'session-token' });
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(jsonResponse([]));
+
+    await ApiClient.get('/accounts?userId=u1');
+
+    expect(sentHeaders()).toEqual({ Authorization: 'Bearer session-token' });
+  });
+
+  it('sends the provider token on POST, PUT, PATCH and DELETE too', async () => {
+    ApiClient.configureAuth({ getToken: () => 'session-token' });
+    vi.mocked(globalThis.fetch).mockImplementation(() => Promise.resolve(jsonResponse({})));
+
+    await ApiClient.post('/transactions', { amount: 1 });
+    await ApiClient.put('/transactions/t1', { amount: 2 });
+    await ApiClient.patch('/loans/l1', { name: 'x' });
+    await ApiClient.delete('/transactions/t1');
+
+    const authHeaders = vi
+      .mocked(globalThis.fetch)
+      .mock.calls.map(([, options]) => (options?.headers as Record<string, string>).Authorization);
+    expect(authHeaders).toEqual([
+      'Bearer session-token',
+      'Bearer session-token',
+      'Bearer session-token',
+      'Bearer session-token',
+    ]);
+  });
+
+  it('lets an explicit token win over the provider', async () => {
+    ApiClient.configureAuth({ getToken: () => 'session-token' });
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(jsonResponse({}));
+
+    await ApiClient.get('/auth/me', 'explicit-token');
+
+    expect(sentHeaders()).toEqual({ Authorization: 'Bearer explicit-token' });
+  });
+
+  it('sends no Authorization header when there is no token at all', async () => {
+    ApiClient.configureAuth({ getToken: () => null });
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(jsonResponse({ accessToken: 't' }));
+
+    await ApiClient.post('/auth/login', { email: 'a@b.c', password: 'p' });
+
+    expect(sentHeaders()).toEqual({ 'Content-Type': 'application/json' });
+  });
+
+  it('calls the unauthorized handler once and still throws on a 401 for a request that carried a token', async () => {
+    const onUnauthorized = vi.fn();
+    ApiClient.configureAuth({ getToken: () => 'expired-token', onUnauthorized });
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(jsonResponse({ message: 'Unauthorized' }, 401));
+
+    await expect(ApiClient.get('/accounts')).rejects.toThrow('Unauthorized');
+
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call the unauthorized handler when a request without a token gets a 401 (wrong password)', async () => {
+    const onUnauthorized = vi.fn();
+    ApiClient.configureAuth({ getToken: () => null, onUnauthorized });
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(jsonResponse({ message: 'Credenciales inválidas' }, 401));
+
+    await expect(ApiClient.post('/auth/login', { email: 'a@b.c', password: 'bad' })).rejects.toThrow(
+      'Credenciales inválidas',
+    );
+
+    expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
+  it('does not call the unauthorized handler on other errors', async () => {
+    const onUnauthorized = vi.fn();
+    ApiClient.configureAuth({ getToken: () => 'session-token', onUnauthorized });
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(jsonResponse({ message: 'Prohibido' }, 403));
+
+    await expect(ApiClient.get('/tax/profile/other')).rejects.toThrow('Prohibido');
+
+    expect(onUnauthorized).not.toHaveBeenCalled();
   });
 });

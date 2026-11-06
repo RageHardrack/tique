@@ -8,6 +8,8 @@
 
 Se conecta a la API backend **Guilliman** mediante cliente HTTP centralizado (`ApiClient`) y utiliza **Nuxt UI v4** con la paleta de identidad visual de **Lascar Blog** (Deep Navy `#0B0F19`, Steel Blue `#4D7EA8`, Soft Gold `#E0DDCF`, Antique Ivory `#FAF7F2`) con soporte completo para modo claro y oscuro.
 
+`ApiClient` adjunta el token de la sesión en todas las llamadas, porque Guilliman toma al usuario del token y no de la URL ni del cuerpo. Si la API responde 401 a una llamada con token (sesión vencida; el JWT dura 7 días y no se renueva), Tique cierra la sesión y lleva al login.
+
 ---
 
 ## 🌟 Módulos y Capacidades
