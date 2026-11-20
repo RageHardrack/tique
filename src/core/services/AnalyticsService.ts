@@ -180,12 +180,12 @@ export class AnalyticsService {
     transactions.forEach((tx) => {
       if (tx.type !== 'INCOME' && tx.type !== 'EXPENSE') return;
 
-      const d = new Date(tx.date);
-      const year = d.getFullYear();
-      const month = d.getMonth();
-      const key = `${year}-${String(month + 1).padStart(2, '0')}`;
-      const label = DateFormatter.format(tx.date, 'MMM YYYY');
-      const sortKey = year * 100 + month;
+      // Key, label and order must share DateFormatter's calendar-day reading,
+      // which keeps legacy UTC-midnight dates on their stored day; a local
+      // getMonth() would move day-1 rows into the previous month.
+      const key = DateFormatter.format(tx.date, 'YYYY-MM');
+      const label = DateFormatter.format(`${key}-01`, 'MMM YYYY');
+      const sortKey = Number(key.replace('-', ''));
 
       if (!monthMap.has(key)) {
         monthMap.set(key, { label, income: 0, expenses: 0, sortKey });

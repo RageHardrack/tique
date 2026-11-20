@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DateRangeService } from './DateRangeService';
 
 describe('DateRangeService - Time Window Calculations', () => {
@@ -76,5 +76,33 @@ describe('DateRangeService - Time Window Calculations', () => {
   it('should format toInputDateString as YYYY-MM-DD', () => {
     const d = new Date(2026, 7, 5);
     expect(DateRangeService.toInputDateString(d)).toBe('2026-08-05');
+  });
+
+  describe('containsDate in a negative UTC offset timezone', () => {
+    const originalTz = process.env.TZ;
+    const october = () =>
+      DateRangeService.calculateRange('MONTHLY', undefined, undefined, new Date(2026, 9, 15));
+
+    beforeAll(() => {
+      process.env.TZ = 'America/Lima';
+    });
+
+    afterAll(() => {
+      process.env.TZ = originalTz;
+    });
+
+    it('keeps UTC-midnight dates on their calendar day at the range edges', () => {
+      expect(DateRangeService.containsDate(october(), '2026-10-01T00:00:00.000Z')).toBe(true);
+      expect(DateRangeService.containsDate(october(), '2026-10-31T00:00:00.000Z')).toBe(true);
+      expect(DateRangeService.containsDate(october(), '2026-11-01T00:00:00.000Z')).toBe(false);
+      expect(DateRangeService.containsDate(october(), '2026-09-30T00:00:00.000Z')).toBe(false);
+    });
+
+    it('reads timestamps with a time in local time', () => {
+      // 2026-11-01T03:00Z is 2026-10-31 22:00 in Lima.
+      expect(DateRangeService.containsDate(october(), '2026-11-01T03:00:00.000Z')).toBe(true);
+      // 2026-10-01T03:00Z is 2026-09-30 22:00 in Lima.
+      expect(DateRangeService.containsDate(october(), '2026-10-01T03:00:00.000Z')).toBe(false);
+    });
   });
 });
