@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Category } from '../entities/Category';
 import { AnalyticsService } from './AnalyticsService';
@@ -159,6 +159,83 @@ describe('AnalyticsService', () => {
     expect(convertCalls).toHaveLength(1);
     expect(convertCalls[0].rate).toBe(798.33);
     expect(breakdown[0].amount).toBe(35);
+  });
+
+  describe('calculatePeriodicTrends in a negative UTC offset timezone', () => {
+    const originalTz = process.env.TZ;
+
+    beforeAll(() => {
+      process.env.TZ = 'America/Lima';
+    });
+
+    afterAll(() => {
+      process.env.TZ = originalTz;
+    });
+
+    const tx = (
+      id: string,
+      date: string,
+      type: 'INCOME' | 'EXPENSE',
+      amount: number,
+    ): Transaction => ({
+      id,
+      userId: 'user-1',
+      accountId: 'acc-pen',
+      amount,
+      type,
+      date,
+      createdAt: date,
+      updatedAt: date,
+    });
+
+    it('buckets and labels each month by the same calendar day', () => {
+      const trends = AnalyticsService.calculatePeriodicTrends({
+        transactions: [
+          tx('nov-1', '2026-11-01T00:00:00.000Z', 'INCOME', 100),
+          tx('oct-1', '2026-10-01T00:00:00.000Z', 'INCOME', 50),
+          tx('oct-15', '2026-10-15T17:00:00.000Z', 'EXPENSE', 20),
+          tx('sep-15', '2026-09-15T17:00:00.000Z', 'EXPENSE', 10),
+          tx('aug-20', '2026-08-20T17:00:00.000Z', 'INCOME', 5),
+        ],
+        accountsCurrencyMap: { 'acc-pen': 'PEN' },
+        convertFn: (amount) => amount,
+        targetCurrency: 'PEN',
+      });
+
+      expect(
+        trends.map(({ periodKey, periodLabel, income, expenses }) => ({
+          periodKey,
+          periodLabel,
+          income,
+          expenses,
+        })),
+      ).toEqual([
+        {
+          periodKey: '2026-08',
+          periodLabel: 'ago 2026',
+          income: 5,
+          expenses: 0,
+        },
+        {
+          periodKey: '2026-09',
+          periodLabel: 'sep 2026',
+          income: 0,
+          expenses: 10,
+        },
+        {
+          periodKey: '2026-10',
+          periodLabel: 'oct 2026',
+          income: 50,
+          expenses: 20,
+        },
+        {
+          periodKey: '2026-11',
+          periodLabel: 'nov 2026',
+          income: 100,
+          expenses: 0,
+        },
+      ]);
+    });
   });
 
   it('should pass transaction exchangeRate to convertFn in periodic trends', () => {
