@@ -1,5 +1,13 @@
-const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://guilliman.localhost:1355/api/v1';
+const DEFAULT_API_BASE_URL = 'http://guilliman.localhost:1355/api/v1';
+
+/**
+ * The configured Guilliman API base, without a trailing slash. Anything that
+ * must point at the same host the requests go to derives from this (S11).
+ */
+export function resolveApiBaseUrl(): string {
+  const configured = import.meta.env.VITE_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+  return configured.endsWith('/') ? configured.slice(0, -1) : configured;
+}
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -15,9 +23,7 @@ export interface ApiAuthOptions {
 }
 
 export class ApiClient {
-  private static readonly baseUrl = BASE_URL.endsWith('/')
-    ? BASE_URL.slice(0, -1)
-    : BASE_URL;
+  private static readonly baseUrl = resolveApiBaseUrl();
 
   private static auth: ApiAuthOptions = {};
 

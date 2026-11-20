@@ -104,6 +104,14 @@ bun run format     # Prettier over src/
   hotels, rent, professional services), progressive brackets from 8% to 30%, and the 8% withholdings
   applied against the balance due or in your favor. See
   [docs/SUNAT_TAX_ARCHITECTURE_GUIDE.md](docs/SUNAT_TAX_ARCHITECTURE_GUIDE.md).
+- **Integrations & MCP tokens (`/integraciones`, ADMIN only)**: an administrator creates, lists and
+  revokes the long-lived MCP access tokens that let external agents read their own finances through
+  Guilliman. The token value is shown exactly once, together with the Hermes blocks ready to paste
+  (the `mcp_servers.guilliman` entry of `config.yaml`, with the MCP URL derived from
+  `VITE_API_BASE_URL`, and the `GUILLIMAN_MCP_TOKEN` line for `~/.hermes/.env`); closing that panel
+  drops the value from the app for good. Revoking asks for confirmation and refreshes the list, and
+  a failed call never leaves the list in a false state. The route and the sidebar entry use the same
+  ADMIN protection as `/admin/users`.
 - **Native UI confirmation dialogs**: centralized modal confirmation (`useConfirm`) with no native
   browser alerts or blocks, with contextual variants (`danger`, `warning`, `info`).
 - **Precise dates and time zones**: the `DateFormatter` engine strictly preserves the selected

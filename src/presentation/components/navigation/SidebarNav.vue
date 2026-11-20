@@ -100,6 +100,13 @@ const displayedNavItems = computed(() => {
       path: '/admin/users',
       icon: 'i-heroicons-shield-check',
     });
+
+    items.push({
+      name: 'integrations',
+      label: 'Integraciones',
+      path: '/integraciones',
+      icon: 'i-heroicons-plug',
+    });
   }
   return items;
 });

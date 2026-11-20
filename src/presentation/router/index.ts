@@ -14,6 +14,7 @@ import GoalsView from '../views/GoalsView.vue';
 import LoansView from '../views/LoansView.vue';
 import TaxView from '../views/TaxView.vue';
 import AdminUsersView from '../views/AdminUsersView.vue';
+import IntegrationsView from '../views/IntegrationsView.vue';
 
 const routes = [
   {
@@ -99,6 +100,12 @@ const routes = [
     path: '/admin/users',
     name: 'admin-users',
     component: AdminUsersView,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: '/integraciones',
+    name: 'integrations',
+    component: IntegrationsView,
     meta: { requiresAuth: true, requiresAdmin: true },
   },
 ];
