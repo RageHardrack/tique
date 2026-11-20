@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+
 import { RouterLink, useRoute } from 'vue-router';
 
+import { useAuthStore } from '../../store/auth';
+
 const route = useRoute();
+const authStore = useAuthStore();
 const isDrawerOpen = ref(false);
 
 interface NavItem {
@@ -86,6 +90,29 @@ const secondaryNavItems: NavItem[] = [
 
 const currentPath = computed(() => route.path);
 
+// Secciones visibles solo para ADMIN, con las mismas etiquetas, iconos y
+// fuente de rol que el sidebar de escritorio (S15).
+const adminNavItems: NavItem[] = [
+  {
+    name: 'admin-users',
+    label: 'Usuarios & Accesos',
+    path: '/admin/users',
+    icon: 'i-heroicons-shield-check',
+  },
+  {
+    name: 'integrations',
+    label: 'Integraciones',
+    path: '/integraciones',
+    icon: 'i-heroicons-plug',
+  },
+];
+
+const drawerNavItems = computed<NavItem[]>(() =>
+  authStore.isAdmin
+    ? [...secondaryNavItems, ...adminNavItems]
+    : secondaryNavItems,
+);
+
 function toggleDrawer() {
   isDrawerOpen.value = !isDrawerOpen.value;
 }
@@ -125,7 +152,7 @@ function closeDrawer() {
         data-testid="more-nav-btn"
         class="flex flex-col items-center justify-center flex-1 min-h-[44px] gap-1 px-1 py-1 rounded-xl text-[11px] font-semibold transition-all active:scale-95 select-none"
         :class="
-          isDrawerOpen || secondaryNavItems.some((s) => s.path === currentPath)
+          isDrawerOpen || drawerNavItems.some((s) => s.path === currentPath)
             ? 'text-[#2563EB] dark:text-sky-300 font-bold bg-[#2563EB]/10 dark:bg-sky-500/15'
             : 'text-slate-500 dark:text-[#94a3b8] hover:text-slate-900 dark:hover:text-white'
         "
@@ -142,15 +169,21 @@ function closeDrawer() {
       v-model:open="isDrawerOpen"
       side="bottom"
       :ui="{
-        content: 'max-h-[80vh] rounded-t-3xl bg-white dark:bg-[#0f1523] p-5 space-y-4 border-t border-slate-200 dark:border-[#283a59]',
+        content:
+          'max-h-[80vh] rounded-t-3xl bg-white dark:bg-[#0f1523] p-5 space-y-4 border-t border-slate-200 dark:border-[#283a59]',
       }"
     >
       <template #content>
         <div class="space-y-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <!-- Drawer Header -->
-          <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#283a59]/60 pb-3">
+          <div
+            class="flex items-center justify-between border-b border-slate-200 dark:border-[#283a59]/60 pb-3"
+          >
             <div class="flex items-center gap-2">
-              <UIcon name="i-heroicons-squares-plus" class="w-5 h-5 text-primary-500" />
+              <UIcon
+                name="i-heroicons-squares-plus"
+                class="w-5 h-5 text-primary-500"
+              />
               <h2 class="text-base font-bold text-slate-900 dark:text-white">
                 Más Secciones
               </h2>
@@ -168,7 +201,7 @@ function closeDrawer() {
           <!-- Secondary Grid -->
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             <RouterLink
-              v-for="sub in secondaryNavItems"
+              v-for="sub in drawerNavItems"
               :key="sub.path"
               :to="sub.path"
               class="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-[#283a59] bg-slate-50 dark:bg-[#162032] hover:border-primary-500 transition-all active:scale-95"
@@ -184,7 +217,9 @@ function closeDrawer() {
               >
                 <UIcon :name="sub.icon" class="w-5 h-5" />
               </div>
-              <span class="text-xs font-bold text-slate-800 dark:text-slate-100">
+              <span
+                class="text-xs font-bold text-slate-800 dark:text-slate-100"
+              >
                 {{ sub.label }}
               </span>
             </RouterLink>

@@ -1,5 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
+
 import { mount, RouterLinkStub } from '@vue/test-utils';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+
+import { useAuthStore } from '../../store/auth';
 import MobileBottomNav from './MobileBottomNav.vue';
 
 vi.mock('vue-router', async (importOriginal) => {
@@ -13,12 +17,14 @@ vi.mock('vue-router', async (importOriginal) => {
 describe('MobileBottomNav.vue - Mobile First Navigation', () => {
   const defaultMountOptions = {
     global: {
+      plugins: [createPinia()],
       stubs: {
         RouterLink: RouterLinkStub,
         UIcon: true,
         UButton: true,
         USlideover: {
-          template: '<div v-if="open" data-testid="slideover"><slot /><slot name="content" /></div>',
+          template:
+            '<div v-if="open" data-testid="slideover"><slot /><slot name="content" /></div>',
           props: ['open'],
         },
       },
@@ -56,5 +62,80 @@ describe('MobileBottomNav.vue - Mobile First Navigation', () => {
 
     const secondaryLinks = wrapper.findAllComponents(RouterLinkStub);
     expect(secondaryLinks.length).toBeGreaterThan(4);
+  });
+
+  function mountWithRole(role: 'ADMIN' | 'USER') {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+
+    const auth = useAuthStore();
+    auth.user = {
+      id: 'u-1',
+      email: `${role.toLowerCase()}@lascar.dev`,
+      name: role,
+      role,
+      createdAt: '',
+    };
+
+    const wrapper = mount(MobileBottomNav, {
+      global: {
+        plugins: [pinia],
+        stubs: {
+          RouterLink: RouterLinkStub,
+          UIcon: true,
+          UButton: true,
+          USlideover: {
+            template:
+              '<div v-if="open" data-testid="slideover"><slot /><slot name="content" /></div>',
+            props: ['open'],
+          },
+        },
+      },
+    });
+
+    return {
+      wrapper,
+      drawerPaths: async () => {
+        await wrapper.find('[data-testid="more-nav-btn"]').trigger('click');
+        // Only links of the opened "Más" sheet count, not the always-visible
+        // tab bar, so an entry moved to the tab bar would fail S15.
+        const tabBar = wrapper.get('nav').element;
+        return wrapper
+          .findAllComponents(RouterLinkStub)
+          .filter((link) => !tabBar.contains(link.element))
+          .map((link) => String((link.props('to') as string) ?? ''));
+      },
+    };
+  }
+
+  describe('"Más" sheet admin sections (S15)', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('lists Usuarios & Accesos and Integraciones for an ADMIN', async () => {
+      const { wrapper, drawerPaths } = mountWithRole('ADMIN');
+      const paths = await drawerPaths();
+
+      expect(paths).toContain('/admin/users');
+      expect(paths).toContain('/integraciones');
+
+      const link = wrapper
+        .findAllComponents(RouterLinkStub)
+        .find((l) => l.props('to') === '/integraciones');
+      expect(link?.text()).toContain('Integraciones');
+      const usersLink = wrapper
+        .findAllComponents(RouterLinkStub)
+        .find((l) => l.props('to') === '/admin/users');
+      expect(usersLink?.text()).toContain('Usuarios & Accesos');
+    });
+
+    it('does not list the admin sections for a regular USER', async () => {
+      const { drawerPaths } = mountWithRole('USER');
+      const paths = await drawerPaths();
+
+      expect(paths).not.toContain('/admin/users');
+      expect(paths).not.toContain('/integraciones');
+    });
   });
 });

@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+### Added
+
+- **e2e**: new Playwright spec for `/integraciones` (token list without secrets, creation with
+  the Hermes `config.yaml` and `.env` blocks, panel closing removes the plaintext from the DOM and
+  it never reaches `localStorage`/`sessionStorage`, a failed revoke keeps the list unchanged, and
+  non-ADMIN users are redirected and see no entry). It stubs the Guilliman API through route
+  interception, so it runs without a backend.
+
+### Fixed
+
+- **navigation**: the mobile "Más" sheet now lists "Usuarios & Accesos" and "Integraciones" only
+  for ADMIN users, with the same labels and icons as the desktop sidebar. Before, admin sections
+  were unreachable from phones.
+
 ## [0.8.0] - 2026-11-20
 
 ### Added
