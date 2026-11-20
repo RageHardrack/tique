@@ -185,6 +185,13 @@ test.describe('Integraciones (MCP tokens) E2E with stubbed API (S16)', () => {
     await expect(page.getByTestId('mcp-token-row').first()).toContainText(
       'Hermes laptop',
     );
+    await expect(page.getByTestId('mcp-token-row').first()).toContainText(
+      /activo/i,
+    );
+    await expect(page.getByTestId('mcp-token-row').first()).not.toContainText(
+      /revocado/i,
+    );
+    await expect(page.getByTestId('revoke-token-btn').first()).toBeVisible();
   });
 
   test('ADMIN ve la entrada Integraciones en el sidebar y en el sheet "Más"', async ({

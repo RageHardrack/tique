@@ -97,8 +97,12 @@ describe('MobileBottomNav.vue - Mobile First Navigation', () => {
       wrapper,
       drawerPaths: async () => {
         await wrapper.find('[data-testid="more-nav-btn"]').trigger('click');
+        // Only links of the opened "Más" sheet count, not the always-visible
+        // tab bar, so an entry moved to the tab bar would fail S15.
+        const tabBar = wrapper.get('nav').element;
         return wrapper
           .findAllComponents(RouterLinkStub)
+          .filter((link) => !tabBar.contains(link.element))
           .map((link) => String((link.props('to') as string) ?? ''));
       },
     };
