@@ -27,6 +27,7 @@ function createTestRouter() {
     { path: '/categorias', name: 'categories', component: CategoriesView, meta: { requiresAuth: true } },
     { path: '/reportes', name: 'reports', component: DashboardView, meta: { requiresAuth: true } },
     { path: '/admin/users', name: 'admin-users', component: DashboardView, meta: { requiresAuth: true, requiresAdmin: true } },
+    { path: '/integraciones', name: 'integrations', component: DashboardView, meta: { requiresAuth: true, requiresAdmin: true } },
   ];
 
   const r = createRouter({
@@ -75,6 +76,7 @@ describe('Vue Router - Route Protection and Navigation Guards', () => {
     { path: '/categorias', name: 'categories' },
     { path: '/reportes', name: 'reports' },
     { path: '/admin/users', name: 'admin-users' },
+    { path: '/integraciones', name: 'integrations' },
   ];
 
   protectedRoutes.forEach(({ path }) => {
@@ -197,6 +199,48 @@ describe('Vue Router - Route Protection and Navigation Guards', () => {
     await testRouter.push('/impuestos');
     await testRouter.isReady();
     expect(testRouter.currentRoute.value.path).toBe('/impuestos');
+  });
+
+  it('registers the Integraciones view on /integraciones behind the same ADMIN meta as /admin/users (S10)', () => {
+    const resolved = appRouter.resolve('/integraciones');
+
+    expect(resolved.name).toBe('integrations');
+    expect(resolved.matched[0]?.meta.requiresAuth).toBe(true);
+    expect(resolved.matched[0]?.meta.requiresAdmin).toBe(true);
+  });
+
+  it('blocks a non-admin user from /integraciones and redirects to /dashboard (S10)', async () => {
+    const authStore = useAuthStore();
+    authStore.accessToken = 'valid-token';
+    authStore.user = {
+      id: 'u-1',
+      email: 'user@lascar.dev',
+      name: 'Regular User',
+      role: 'USER',
+      createdAt: '',
+    };
+
+    await testRouter.push('/integraciones');
+    await testRouter.isReady();
+
+    expect(testRouter.currentRoute.value.path).toBe('/dashboard');
+  });
+
+  it('allows an admin user to access /integraciones (S10)', async () => {
+    const authStore = useAuthStore();
+    authStore.accessToken = 'valid-token';
+    authStore.user = {
+      id: 'u-1',
+      email: 'admin@lascar.dev',
+      name: 'Admin User',
+      role: 'ADMIN',
+      createdAt: '',
+    };
+
+    await testRouter.push('/integraciones');
+    await testRouter.isReady();
+
+    expect(testRouter.currentRoute.value.path).toBe('/integraciones');
   });
 
   it('registers the Plantillas view on /plantillas behind the auth meta (S6)', () => {
