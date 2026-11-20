@@ -111,6 +111,22 @@ export class DateRangeService {
   }
 
   /**
+   * Whether a stored date falls inside the range, compared by calendar day.
+   * Legacy UTC-midnight dates keep their stored day instead of shifting to
+   * the previous local day, matching how reports label and group them.
+   */
+  static containsDate(
+    range: Pick<DateRangeResult, 'startDate' | 'endDate'>,
+    date: string | Date,
+  ): boolean {
+    const day = DateFormatter.toInputDate(date);
+    return (
+      day >= DateFormatter.toInputDate(range.startDate) &&
+      day <= DateFormatter.toInputDate(range.endDate)
+    );
+  }
+
+  /**
    * Formats a date to YYYY-MM-DD for standard date input elements.
    */
   static toInputDateString(date: Date): string {

@@ -75,11 +75,9 @@ const categoriesMap = computed(() => {
 
 // Filter transactions by calculated date range
 const periodTransactions = computed(() => {
-  const { startDate, endDate } = currentRange.value;
-  return transactionStore.transactions.filter((tx) => {
-    const txDate = new Date(tx.date);
-    return txDate >= startDate && txDate <= endDate;
-  });
+  return transactionStore.transactions.filter((tx) =>
+    DateRangeService.containsDate(currentRange.value, tx.date),
+  );
 });
 
 function convertAmount(

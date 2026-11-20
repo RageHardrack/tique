@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file. The format foll
 ### Fixed
 
 - **reports**: the monthly trend no longer mislabels or repeats months (for example Aug, Oct, Nov, Nov instead of Aug, Sep, Oct, Nov), and movements dated on the 1st of a month now count in that month instead of the previous one.
+- **reports**: date ranges compare movements by calendar day, so a movement dated on the 1st or the last day of a month no longer slips out of, or into, the wrong range.
 
 ## [0.7.1] - 2026-11-06
 
