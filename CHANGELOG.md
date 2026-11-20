@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-20
+
+### Added
+
+- **integrations**: new `/integraciones` view, visible only to ADMIN, to manage the MCP access
+  tokens that let external agents (like Hermes) read your own finances through Guilliman. You
+  create a token by name, its value is shown once with a copy button and the ready-to-paste Hermes
+  blocks (the `mcp_servers.guilliman` entry of `config.yaml` and the `GUILLIMAN_MCP_TOKEN` line for
+  `~/.hermes/.env`), and the value disappears from the app when you close that panel. The list
+  shows name, creation date, last use (`Nunca` when it has never been used) and status, and
+  revoking asks for confirmation first. Route, sidebar entry and API layer follow the same ADMIN
+  protection as `/admin/users`.
+
 ## [0.7.2] - 2026-11-20
 
 ### Fixed
