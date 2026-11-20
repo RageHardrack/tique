@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-20
+
 ### Added
 
 - **integrations**: new `/integraciones` view, visible only to ADMIN, to manage the MCP access
