@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-20
+
 ### Fixed
 
 - **reports**: the monthly trend no longer mislabels or repeats months (for example Aug, Oct, Nov, Nov instead of Aug, Sep, Oct, Nov), and movements dated on the 1st of a month now count in that month instead of the previous one.
